@@ -1,0 +1,3742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ben Rummy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script>
+/* PeerJS loader — tries three CDNs in order (jsDelivr → unpkg → cdnjs); retryable on demand */
+(function(){
+const PEER_CDNS = [
+'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js',
+'https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js',
+'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js'
+];
+let idx = 0;
+window._peerLoadState = 'loading';
+function tryLoad(){
+if (idx >= PEER_CDNS.length){ window._peerLoadState = 'failed'; return; }
+const s = document.createElement('script');
+s.src = PEER_CDNS[idx++];
+s.onload = ()=>{ window._peerLoadState = 'ready'; };
+s.onerror = ()=>{ s.remove(); tryLoad(); };
+document.head.appendChild(s);
+}
+window._peerRetryLoad = function(cb){
+if (typeof Peer !== 'undefined'){ if(cb) cb(true); return; }
+idx = 0; window._peerLoadState = 'loading';
+tryLoad();
+const t0 = Date.now();
+(function poll(){
+if (typeof Peer !== 'undefined'){ if(cb) cb(true); return; }
+if (window._peerLoadState==='failed' || Date.now()-t0 > 12000){ if(cb) cb(false); return; }
+setTimeout(poll, 300);
+})();
+};
+tryLoad();
+})();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{touch-action:manipulation;}
+:root{
+  --bg:#e8e4f0;
+  --bg2:#ddd8ec;
+  --bg3:#d0cae0;
+  --panel:#f0edf8;
+  --panel2:#e4e0f2;
+  --border:#b0a8cc;
+  --gold:#8a6a10;
+  --gold2:#a07820;
+  --text:#1a1430;
+  --text2:#3a2e58;
+  --text3:#6a5a88;
+  --cups:#1a5aaa;
+  --swords:#7a6200;
+  --staffs:#aa2018;
+  --coins:#1a7838;
+  --moon:#4a3888;
+  --sun:#aa5000;
+  --wild:#6a2098;
+  --star:#aa7800;
+  --arrow:#0878a0;
+  --skull:#b81818;
+  --td:#aa7000;
+  --tc:#3858b8;
+  --cream:#f8f2e4;
+  --card-w:58px;
+  --card-h:86px;
+  --strip-w:18px;
+  --meld-w:46px;
+  --meld-h:68px;
+  --dis-w:28px;
+  --dis-h:44px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-height:100vh;min-height:100dvh;overflow-x:hidden;}
+
+/* ══ SCREENS ══ */
+.screen{display:none;min-height:100vh;min-height:100dvh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ══ SETUP SCREEN ══ */
+#setup-screen{
+  align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#e0daf0 0%,#d0c8e8 100%);
+  padding:20px;
+}
+.setup-box{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px 48px;
+  max-width:480px;
+  width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+}
+.game-title{
+  font-family:'Cinzel',serif;
+  font-size:2.2rem;
+  font-weight:900;
+  color:var(--gold);
+  letter-spacing:4px;
+  text-align:center;
+  margin-bottom:6px;
+}
+.game-subtitle{
+  font-family:'Cinzel',serif;
+  font-size:0.7rem;
+  color:var(--text2);
+  letter-spacing:3px;
+  text-align:center;
+  margin-bottom:32px;
+}
+.setup-row{margin-bottom:24px;}
+.setup-label{
+  font-family:'Cinzel',serif;
+  font-size:0.65rem;
+  color:var(--text2);
+  letter-spacing:2px;
+  margin-bottom:10px;
+  display:block;
+}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-opt{
+  flex:1;min-width:48px;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);font-family:'Cinzel',serif;font-size:0.75rem;
+  padding:10px 4px;border-radius:8px;cursor:pointer;
+  transition:all 0.15s;text-align:center;
+}
+.btn-opt:hover{border-color:var(--gold);color:var(--gold);}
+.btn-opt.sel{background:var(--gold);border-color:var(--gold2);color:#1a1430;font-weight:700;}
+.setup-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:'Crimson Pro',serif;font-size:1rem;
+  padding:10px 14px;border-radius:8px;outline:none;
+}
+.setup-input:focus{border-color:var(--gold);}
+.vp-hint{font-size:0.75rem;color:var(--text3);margin-top:6px;}
+.btn-start{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--gold),#a07828);
+  border:none;border-radius:10px;
+  font-family:'Cinzel',serif;font-size:1rem;font-weight:700;
+  color:#1a1430;cursor:pointer;letter-spacing:2px;
+  transition:all 0.2s;margin-top:8px;
+}
+.btn-start:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.4);}
+
+/* ══ GAME SCREEN ══ */
+#game-screen{
+  background:var(--bg);
+  padding:0;
+}
+
+/* Score bar */
+#score-bar{
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  padding:8px 12px;
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+}
+.score-chip{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:6px 14px;
+  font-family:'Cinzel',serif;font-size:0.8rem;
+  display:flex;align-items:center;gap:8px;
+  white-space:nowrap;
+}
+.score-chip.human{border-color:var(--gold);border-width:2px;}
+.score-chip.active-turn{
+  border-color:var(--gold2);border-width:2px;
+  background:rgba(140,110,20,0.12);
+  animation:pulse-chip 1s ease-in-out infinite;
+}
+@keyframes pulse-chip{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.4);}50%{box-shadow:0 0 0 4px rgba(201,168,76,0.1);}}
+.chip-name{color:var(--text);font-weight:900;font-size:0.85rem;}
+.chip-vp{color:var(--gold);font-weight:700;}
+.chip-team{font-size:0.62rem;padding:2px 6px;border-radius:10px;font-weight:700;}
+.chip-team.t1{background:rgba(26,90,170,0.15);color:#1a5aaa;}
+.chip-team.t2{background:rgba(170,32,24,0.15);color:#aa2018;}
+.chip-team.solo{background:rgba(184,150,10,0.18);color:#8a6a00;}
+
+#hand-goal{
+  margin-left:auto;font-family:'Cinzel',serif;font-size:0.75rem;
+  color:var(--text2);white-space:nowrap;font-weight:700;
+}
+
+/* Main layout — full width stacked */
+#game-body{
+  display:flex;flex-direction:column;flex:1;overflow-y:auto;overflow-x:hidden;
+}
+
+/* AI tableaux */
+  padding:8px 10px 4px;
+  display:flex;flex-direction:column;gap:6px;
+  flex-shrink:0;
+}
+
+/* Human tableau */
+#human-tableau-area{
+  padding:4px 10px;
+  flex-shrink:0;
+}
+
+/* Discard strip */
+#discard-strip{
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+#discard-strip-header{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px 4px;
+}
+.strip-label{
+  font-family:'Cinzel',serif;font-size:0.75rem;
+  color:var(--text);letter-spacing:2px;font-weight:700;
+}
+#deck-count{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;padding:2px 8px;font-size:0.7rem;color:var(--text);font-weight:700;
+}
+#log-toggle-btn{
+  margin-left:auto;
+  background:transparent;border:2px solid var(--border);
+  color:var(--text2);font-family:'Cinzel',serif;font-size:0.65rem;font-weight:700;
+  padding:3px 10px;border-radius:6px;cursor:pointer;
+  transition:all 0.15s;
+}
+#log-toggle-btn:hover{border-color:var(--gold);color:var(--gold);}
+#discard-pile-scroll{
+  overflow-x:auto;overflow-y:hidden;
+  padding:4px 10px 8px;
+  -webkit-overflow-scrolling:touch;
+}
+#discard-pile{
+  display:flex;flex-wrap:nowrap;gap:3px;
+  align-items:flex-end;
+  min-height:44px;
+}
+#game-log-area{
+  border-top:1px solid var(--border);
+  padding:6px 10px;
+  max-height:120px;overflow-y:auto;
+}
+#game-log{font-size:0.6rem;color:var(--text3);line-height:1.6;}
+.log-entry{margin-bottom:2px;}
+.log-entry.imp{color:var(--gold);font-weight:700;}
+.log-entry.good{color:#1a7838;font-weight:600;}
+.log-entry.bad{color:var(--skull);}
+.log-entry.info{color:#0878a0;}
+
+/* Player tableau sections */
+.player-tableau{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 10px;
+}
+.player-tableau.human-tableau{
+  border-color:rgba(201,168,76,0.4);
+}
+.player-tableau.active-tableau{
+  border-color:var(--gold2);
+}
+.tab-header{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:6px;
+}
+.tab-name{
+  font-family:'Cinzel',serif;font-size:0.72rem;font-weight:900;
+  color:var(--text);letter-spacing:1px;
+}
+.tab-name.human{color:var(--gold);}
+.tab-team-badge{
+  font-size:0.55rem;padding:2px 6px;border-radius:8px;
+  font-family:'Cinzel',serif;letter-spacing:1px;font-weight:700;
+}
+.tab-team-badge.t1{background:rgba(26,90,170,0.2);color:#1a5aaa;border:1px solid rgba(26,90,170,0.5);}
+.tab-team-badge.t2{background:rgba(170,32,24,0.2);color:#aa2018;border:1px solid rgba(170,32,24,0.5);}
+.tab-team-badge.solo{background:rgba(184,150,10,0.22);color:#8a6a00;border:1px solid rgba(184,150,10,0.55);}
+.tab-score-preview{
+  margin-left:auto;font-size:0.6rem;color:var(--text2);
+  font-family:'Cinzel',serif;font-weight:700;
+}
+.melds-row{
+  display:flex;gap:6px;flex-wrap:wrap;min-height:66px;align-items:flex-start;
+}
+.empty-tableau{
+  font-size:0.65rem;color:var(--text3);font-style:italic;
+  padding:4px 0;
+}
+
+/* Layoff-selectable meld */
+.meld-block.layoff-target{
+  border-color:rgba(160,144,232,0.8) !important;
+  cursor:pointer;
+  animation:layoff-pulse 0.8s ease-in-out infinite;
+  box-shadow:0 0 10px rgba(160,144,232,0.5);
+}
+.meld-block.layoff-target:hover{
+  border-color:#a090e8 !important;
+  background:rgba(112,96,168,0.1);
+  box-shadow:0 0 16px rgba(160,144,232,0.7);
+}
+@keyframes layoff-pulse{0%,100%{box-shadow:0 0 6px rgba(160,144,232,0.4);}50%{box-shadow:0 0 14px rgba(160,144,232,0.8);}}
+.bzf-meld-card.displace-target{
+  cursor:pointer;
+  animation:hint-pulse 0.8s ease-in-out infinite;
+  box-shadow:0 0 8px rgba(144,64,192,0.6);
+  border-color:var(--wild) !important;
+  border-width:2px !important;
+}
+.bzf-meld-card.displace-target:hover{
+  transform:translateY(-6px);
+  box-shadow:0 8px 20px rgba(144,64,192,0.5);
+}
+/* Meld block */
+.meld-block{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:4px 5px;
+  display:flex;flex-direction:row;gap:2px;align-items:flex-end;
+  cursor:default;
+  transition:border-color 0.15s;
+  position:relative;
+}
+.meld-block.can-layoff{
+  border-color:rgba(201,168,76,0.6);
+  cursor:pointer;
+}
+.meld-block.can-layoff:hover{
+  border-color:var(--gold2);
+  background:rgba(201,168,76,0.05);
+}
+.meld-block.can-displace{
+  border-color:rgba(144,64,192,0.6);
+  cursor:pointer;
+}
+.meld-type-badge{
+  position:absolute;top:-8px;left:4px;
+  font-size:0.38rem;padding:1px 4px;border-radius:4px;
+  font-family:'Cinzel',serif;letter-spacing:1px;
+  background:var(--panel2);border:1px solid var(--border);
+  color:var(--text3);
+}
+.meld-block.complete-meld{
+  border-color:var(--gold);
+  box-shadow:0 0 8px rgba(201,168,76,0.3);
+}
+.meld-block.complete-meld .meld-type-badge{
+  color:var(--gold);border-color:var(--gold);
+}
+/* Locked/collapsed meld — discard-style mini cards side by side */
+.meld-block.locked-meld{
+  padding:3px 4px;
+  gap:2px;
+  border-color:var(--gold);
+  box-shadow:0 0 6px rgba(201,168,76,0.4);
+  cursor:default !important;
+  align-items:flex-end;
+  flex-wrap:nowrap;
+}
+.meld-strip-only{
+  width:var(--dis-w);
+  height:var(--dis-h);
+  border-radius:3px;
+  flex-shrink:0;
+  position:relative;
+  overflow:hidden;
+}
+.meld-strip-only .bzf-c-strip{
+  width:100%;border-radius:3px;
+  font-size:0.48rem;
+}
+.meld-strip-only .bzf-c-strip-rank{font-size:0.58rem;}
+.meld-strip-only .bzf-c-strip-suit{font-size:0.72rem;}
+.meld-strip-only .bzf-c-strip-vp{font-size:0.4rem;}
+
+/* ── Card styles ── */
+.bzf-card-wrap{position:relative;flex-shrink:0;display:inline-flex;align-items:flex-end;cursor:default;}
+.bzf-card{
+  width:var(--card-w);height:var(--card-h);
+  border-radius:6px;border:1.5px solid rgba(0,0,0,0.15);
+  position:relative;overflow:hidden;background:var(--cream);
+  transition:transform 0.15s,box-shadow 0.15s;
+  flex-shrink:0;user-select:none;
+}
+.bzf-card.hand{cursor:pointer;}
+.bzf-card.hand:hover{transform:translateY(-8px);box-shadow:0 8px 20px rgba(0,0,0,0.3);}
+.bzf-card.sel{transform:translateY(-12px);box-shadow:0 10px 24px rgba(201,168,76,0.4);border-color:var(--gold);border-width:2px;}
+.bzf-card.hint{animation:hint-pulse 0.8s ease-in-out infinite;}
+@keyframes hint-pulse{0%,100%{border-color:rgba(201,168,76,0.4);}50%{border-color:var(--gold2);box-shadow:0 0 8px rgba(201,168,76,0.5);}}
+/* Meld sized */
+.bzf-meld-card{
+  width:var(--card-w);height:var(--card-h);
+  border-radius:5px;border:1px solid rgba(0,0,0,0.12);
+  position:relative;overflow:hidden;background:var(--cream);
+  flex-shrink:0;
+}
+.bzf-meld-card .bzf-c-strip{width:var(--strip-w);}
+.bzf-meld-card .bzf-c-face{left:var(--strip-w);}
+.bzf-meld-card .bzf-c-strip-rank{font-size:0.44rem;}
+.bzf-meld-card .bzf-c-strip-suit{font-size:0.6rem;}
+.bzf-meld-card .bzf-c-strip-vp{font-size:0.36rem;}
+/* Discard sized */
+.bzf-dis-card{
+  width:var(--dis-w);height:var(--dis-h);
+  border-radius:3px;border:1px solid rgba(0,0,0,0.1);
+  position:relative;overflow:hidden;background:var(--cream);
+  flex-shrink:0;cursor:pointer;
+  transition:transform 0.12s;
+}
+.bzf-dis-card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+.bzf-dis-card .bzf-c-strip { width: 100%; border-radius: 3px; }
+.bzf-dis-card .bzf-c-strip-vp { display: block; }
+.bzf-dis-card.dis-top{
+  width:34px;height:52px;
+  border-color:var(--gold);border-width:2px;
+  cursor:pointer;
+}
+.bzf-dis-card.dis-top:hover{transform:translateY(-6px);box-shadow:0 6px 16px rgba(201,168,76,0.4);}
+
+/* Card internals */
+.bzf-c-strip{
+  position:absolute;top:0;left:0;bottom:0;width:var(--strip-w);
+  border-radius:4px 0 0 4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:4px 0 5px;
+}
+.bzf-c-strip-rank{font-size:0.44rem;font-weight:900;color:#fff;line-height:1;font-family:'Cinzel',serif;flex:0 0 auto;}
+.bzf-c-strip-suit{font-size:0.6rem;color:rgba(255,255,255,0.95);line-height:1;flex:1 0 auto;display:flex;align-items:center;justify-content:center;}
+.bzf-c-strip-vp{font-size:0.36rem;font-weight:900;color:rgba(255,255,255,1);line-height:1;text-align:center;flex:0 0 auto;padding-bottom:1px;white-space:nowrap;}
+.bzf-c-face{
+  position:absolute;top:0;left:var(--strip-w);right:0;bottom:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 2px;
+}
+.bzf-c-big-rank{font-size:1.1rem;font-weight:900;line-height:1;font-family:'Cinzel',serif;}
+.bzf-c-big-suit{font-size:0.85rem;line-height:1;margin-top:1px;}
+.bzf-c-vp-small{font-size:0.42rem;margin-top:2px;font-weight:700;opacity:0.8;}
+
+/* Suit backgrounds */
+.bzf-sbg-Hearts{background:#f0f7ff;border-color:rgba(58,127,212,0.4);}
+.bzf-sbg-Swords{background:#fffde8;border-color:rgba(200,168,0,0.4);}
+.bzf-sbg-Diamonds{background:#fff5f5;border-color:rgba(200,48,48,0.35);}
+.bzf-sbg-Coins{background:#f0fff4;border-color:rgba(42,154,80,0.35);}
+.bzf-sbg-Moon{background:#f5f4ff;border-color:rgba(112,96,168,0.35);}
+.bzf-sbg-Sun{background:#fff8f0;border-color:rgba(212,114,10,0.35);}
+.bzf-sbg-Wild{background:linear-gradient(135deg,#f5f0ff,#fff0f8,#f0f8ff);border-color:rgba(144,64,192,0.5);}
+/* Suit strips */
+.bzf-sc-Hearts .bzf-c-strip{background:#3a7fd4;}
+.bzf-sc-Swords .bzf-c-strip{background:#c8a800;}
+.bzf-sc-Diamonds .bzf-c-strip{background:#d43a2a;}
+.bzf-sc-Coins .bzf-c-strip{background:#2a9a50;}
+.bzf-sc-Moon .bzf-c-strip{background:#7060a8;}
+.bzf-sc-Sun .bzf-c-strip{background:#d4720a;}
+/* Suit face colors */
+.bzf-sc-Hearts .bzf-c-big-rank,.bzf-sc-Hearts .bzf-c-big-suit{color:#1a5090;}
+.bzf-sc-Swords .bzf-c-big-rank,.bzf-sc-Swords .bzf-c-big-suit{color:#7a6200;}
+.bzf-sc-Diamonds .bzf-c-big-rank,.bzf-sc-Diamonds .bzf-c-big-suit{color:#7a1a10;}
+.bzf-sc-Coins .bzf-c-big-rank,.bzf-sc-Coins .bzf-c-big-suit{color:#1a6a30;}
+.bzf-sc-Moon .bzf-c-big-rank,.bzf-sc-Moon .bzf-c-big-suit{color:#402878;}
+.bzf-sc-Sun .bzf-c-big-rank,.bzf-sc-Sun .bzf-c-big-suit{color:#7a3a00;}
+
+/* ── Joker rainbow overrides — applies on top of suit class ── */
+.bzf-joker-card{
+  background:linear-gradient(135deg,#fff0f8,#f5f0ff,#f0f8ff,#f0fff4,#fffde8,#fff8f0) !important;
+  border-color:rgba(180,80,220,0.5) !important;
+}
+.bzf-joker-card .bzf-c-strip{
+  background:linear-gradient(180deg,
+    #d43a2a 0%,
+    #d4720a 18%,
+    #c8a800 36%,
+    #2a9a50 54%,
+    #3a7fd4 72%,
+    #7060a8 90%) !important;
+}
+.bzf-joker-card .bzf-c-strip-rank,
+.bzf-joker-card .bzf-c-strip-suit,
+.bzf-joker-card .bzf-c-strip-vp{color:#fff !important;text-shadow:0 0 4px rgba(0,0,0,0.5);}
+.bzf-joker-card .bzf-c-big-rank{
+  background:linear-gradient(135deg,#d43a2a,#d4720a,#c8a800,#2a9a50,#3a7fd4,#7060a8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.bzf-joker-card .bzf-c-big-suit{
+  background:linear-gradient(135deg,#3a7fd4,#7060a8,#d43a2a);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* Hand area */
+#human-hand-area{
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  padding:10px 12px 12px;
+  flex-shrink:0;
+}
+.hand-label{
+  font-family:'Cinzel',serif;font-size:0.75rem;color:var(--text);
+  letter-spacing:2px;margin-bottom:6px;display:flex;align-items:center;gap:8px;font-weight:700;
+}
+.hand-count{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;padding:2px 8px;font-size:0.7rem;color:var(--text);font-weight:700;
+}
+#human-hand{display:flex;gap:3px;flex-wrap:wrap;min-height:82px;}
+
+/* ══ SCORING SCREEN ══ */
+
+/* Action buttons */
+#action-bar{
+  background:var(--panel2);
+  border-top:1px solid var(--border);
+  padding:8px 12px;
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+}
+.action-btn{
+  padding:7px 14px;border-radius:8px;
+  font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:1px;
+  border:2px solid;cursor:pointer;transition:all 0.15s;
+  white-space:nowrap;font-weight:700;
+}
+.action-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.btn-draw-deck{background:#d0f0f8;border-color:#0878a0;color:#0878a0;}
+.btn-draw-deck:hover:not(:disabled){background:#b0e4f4;}
+.btn-draw-dis{background:#f8edcc;border-color:#8a6a10;color:#8a6a10;}
+.btn-draw-dis:hover:not(:disabled){background:#f0e0a8;}
+.btn-meld{background:#d0f0dc;border-color:#1a7838;color:#1a7838;}
+.btn-meld:hover:not(:disabled){background:#b0e4c4;}
+.btn-layoff{background:#e0d8f8;border-color:#4a3888;color:#4a3888;}
+.btn-layoff:hover:not(:disabled){background:#ccc0f0;}
+.btn-layoff.blink{animation:btn-blink 0.4s ease-in-out 3;}
+@keyframes btn-blink{0%,100%{opacity:1;}50%{opacity:0.1;}}
+.btn-displace{background:#edd8f8;border-color:#6a2098;color:#6a2098;}
+.btn-displace:hover:not(:disabled){background:#ddb8f0;}
+.btn-discard{background:#fcd8d8;border-color:#b81818;color:#b81818;}
+.btn-discard:hover:not(:disabled){background:#f8b8b8;}
+.btn-back{background:#f0e4d4;border-color:#7a4820;color:#7a4820;}
+.btn-back:hover:not(:disabled){background:#e4d0b8;}
+#action-status{
+  font-size:0.8rem;color:#7a1818;font-weight:700;
+  text-align:center;padding:6px 12px;min-height:1.4em;
+  width:100%;
+}
+
+/* Hand area */
+#score-screen{
+  align-items:center;justify-content:flex-start;
+  background:linear-gradient(160deg,#e8e4f8 0%,#d8d0f0 100%);
+  padding:20px;overflow-y:auto;
+}
+.score-box{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:32px 40px;
+  max-width:560px;width:100%;margin:0 auto;
+}
+.score-title{
+  font-family:'Cinzel',serif;font-size:1.4rem;font-weight:900;
+  color:var(--gold);letter-spacing:3px;text-align:center;margin-bottom:24px;
+}
+.score-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.score-table th{
+  font-family:'Cinzel',serif;font-size:0.58rem;color:var(--text2);
+  letter-spacing:1px;padding:6px 10px;border-bottom:2px solid var(--border);
+  text-align:left;font-weight:700;
+}
+.score-table td{
+  padding:8px 10px;font-size:0.82rem;border-bottom:1px solid rgba(100,90,140,0.3);color:var(--text);
+}
+.score-table tr.winner td{color:#1a7838;font-weight:700;}
+.score-detail{font-size:0.65rem;color:var(--text3);}
+.score-btn-row{display:flex;gap:10px;justify-content:center;margin-top:8px;}
+.score-btn{
+  padding:12px 28px;border-radius:8px;
+  font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:2px;
+  border:1px solid;cursor:pointer;transition:all 0.15s;
+}
+.score-btn.primary{background:var(--gold);border-color:var(--gold2);color:#1a1430;font-weight:700;}
+.score-btn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,0.4);}
+.score-btn.secondary{background:transparent;border-color:var(--border);color:var(--text2);}
+.score-btn.secondary:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ══ WIN SCREEN ══ */
+#win-screen{
+  align-items:center;justify-content:flex-start;
+  background:linear-gradient(160deg,#e8f0e0 0%,#d8e4cc 100%);
+  padding:20px;overflow-y:auto;text-align:center;
+}
+.win-title{
+  font-family:'Cinzel',serif;font-size:2.4rem;font-weight:900;
+  color:var(--gold);letter-spacing:6px;margin-bottom:8px;
+}
+@keyframes win-glow{0%,100%{text-shadow:0 0 20px rgba(140,110,20,0.3);}50%{text-shadow:0 0 40px rgba(140,110,20,0.6);}}
+.win-sub{font-family:'Cinzel',serif;font-size:0.85rem;color:var(--text2);letter-spacing:2px;margin-bottom:16px;font-weight:700;}
+
+/* AI thinking */
+.ai-thinking{
+  display:inline-block;
+  font-size:0.6rem;color:var(--text3);font-style:italic;
+  padding:3px 8px;background:var(--bg3);border-radius:10px;
+}
+
+/* Tooltip */
+#br-tooltip{
+  display:none;position:fixed;
+  background:#f4f0e8;border:1px solid var(--gold);
+  border-radius:6px;padding:8px 11px;
+  min-width:120px;max-width:180px;
+  font-family:'Cinzel',serif;font-size:0.58rem;
+  line-height:1.7;color:var(--text);
+  white-space:normal;z-index:9999;pointer-events:none;
+  box-shadow:0 4px 16px rgba(60,50,100,0.2);
+}
+#br-tooltip.show{display:block;}
+
+/* Modal */
+#modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(100,90,140,0.5);z-index:100;
+  align-items:center;justify-content:center;
+}
+#modal-overlay.show{display:flex;}
+#modal-box{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:28px 32px;
+  max-width:420px;width:90%;
+  box-shadow:0 8px 32px rgba(60,50,100,0.25);
+}
+.modal-title{
+  font-family:'Cinzel',serif;font-size:1rem;color:var(--gold);
+  letter-spacing:2px;margin-bottom:16px;
+}
+.modal-body{font-size:0.82rem;color:var(--text2);margin-bottom:20px;line-height:1.7;}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+.modal-btn{
+  padding:9px 20px;border-radius:7px;
+  font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:1px;
+  border:1px solid;cursor:pointer;transition:all 0.15s;
+}
+.modal-btn.primary{background:var(--gold);border-color:var(--gold2);color:#1a1430;font-weight:700;}
+.modal-btn.secondary{background:transparent;border-color:var(--border);color:var(--text2);}
+.modal-btn.primary:hover{transform:translateY(-1px);}
+.modal-btn.secondary:hover{border-color:var(--gold);color:var(--gold);}
+
+/* Meld selection preview */
+#meld-preview{
+  background:var(--bg3);border:1px dashed var(--border);
+  border-radius:8px;padding:6px 10px;
+  font-size:0.65rem;color:var(--text3);
+  display:none;margin-left:8px;
+}
+#meld-preview.show{display:block;}
+#meld-preview.valid{border-color:#2a9a50;color:#2ecc71;}
+#meld-preview.invalid{border-color:var(--skull);color:#ff6060;}
+
+/* Hot seat handoff screen */
+#handoff-screen{
+  align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#e4e0f4 0%,#d4cce8 100%);
+  padding:20px;text-align:center;
+}
+.handoff-box{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:40px 48px;
+  max-width:400px;width:100%;
+  box-shadow:0 8px 32px rgba(60,50,100,0.25);
+}
+.handoff-label{
+  font-family:'Cinzel',serif;font-size:0.7rem;color:var(--text2);
+  letter-spacing:3px;margin-bottom:12px;
+}
+.handoff-name{
+  font-family:'Cinzel',serif;font-size:2rem;font-weight:900;
+  color:var(--gold);letter-spacing:4px;margin-bottom:8px;
+}
+.handoff-sub{
+  font-size:0.85rem;color:var(--text2);margin-bottom:32px;
+}
+.btn-reveal{
+  width:100%;padding:16px;
+  background:linear-gradient(135deg,var(--gold),#a07828);
+  border:none;border-radius:10px;
+  font-family:'Cinzel',serif;font-size:1rem;font-weight:700;
+  color:#1a1430;cursor:pointer;letter-spacing:2px;
+  transition:all 0.2s;
+}
+.btn-reveal:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(201,168,76,0.4);}
+
+/* Setup player slots */
+.player-slot{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+}
+.player-slot:last-child{border-bottom:none;}
+.slot-num{
+  font-family:'Cinzel',serif;font-size:0.6rem;color:var(--text3);
+  width:20px;flex-shrink:0;
+}
+.slot-name-input{
+  flex:1;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:'Crimson Pro',serif;font-size:0.85rem;
+  padding:6px 10px;border-radius:6px;outline:none;
+}
+.slot-name-input:focus{border-color:var(--gold);}
+.slot-toggle{
+  display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;
+  flex-shrink:0;
+}
+.slot-toggle button{
+  padding:5px 10px;border:none;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:0.55rem;letter-spacing:1px;
+  background:var(--bg3);color:var(--text3);transition:all 0.15s;
+}
+.slot-toggle button.active{background:var(--gold);color:#1a1430;font-weight:700;}
+.slot-you{
+  font-family:'Cinzel',serif;font-size:0.6rem;color:var(--gold);
+  padding:6px 10px;flex:1;
+}
+/* Inline bid bar */
+#bid-bar{
+  background:rgba(140,110,20,0.08);
+  border:1px solid rgba(140,110,20,0.3);
+  border-radius:8px;
+  padding:8px 10px;
+  margin-bottom:8px;
+}
+#bid-bar-inner{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+}
+.bid-bar-label{
+  font-family:'Cinzel',serif;font-size:0.55rem;
+  color:var(--text2);letter-spacing:2px;
+  flex-shrink:0;
+}
+.bid-btn .bid-hint{
+  display:block;font-size:0.42rem;opacity:0.7;
+  font-family:'Crimson Pro',serif;letter-spacing:0;font-weight:400;
+  margin-top:2px;
+}
+
+/* Bid buttons */
+.bid-btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px;}
+.bid-btn{
+  padding:12px 20px;border-radius:8px;min-width:100px;
+  font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:2px;font-weight:700;
+  border:2px solid;cursor:pointer;transition:all 0.15s;
+}
+.bid-btn.laoda{background:#f8edcc;border-color:#8a6a10;color:#5a4000;}
+.bid-btn.laoda:hover{background:#f0e0a0;}
+.bid-btn.pinyin{background:#d0f0f8;border-color:#0878a0;color:#044a6a;}
+.bid-btn.pinyin:hover{background:#b0e4f4;}
+.bid-btn.pass{background:#e8e4f0;border-color:#6a5a88;color:#3a2e58;}
+.bid-btn.pass:hover{background:#d8d0e8;border-color:#3a2e58;}
+
+/* ══ ONLINE MULTIPLAYER (Phase 1) ══ */
+.seat-num{font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;color:var(--gold);width:20px;text-align:center;flex-shrink:0;}
+.net-status{font-family:'Crimson Pro',serif;font-size:0.8rem;color:var(--text3);text-align:center;font-weight:600;padding:2px 0;}
+.net-status.err{color:#aa2018;font-weight:700;}
+.net-status.ok{color:#1a7838;font-weight:700;}
+.net-lobby-row{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--panel);border:1px solid var(--border);border-radius:6px;margin-bottom:5px;font-family:'Crimson Pro',serif;font-size:0.88rem;font-weight:700;color:var(--text);}
+.net-lobby-row .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.net-lobby-row .tag{font-size:0.68rem;font-weight:800;color:var(--text3);background:rgba(0,0,0,0.06);padding:2px 8px;border-radius:4px;flex-shrink:0;}
+.net-lobby-row.open-seat{opacity:0.6;}
+.net-lobby-row.me{border-color:var(--gold);background:rgba(138,106,16,0.08);}
+.net-move-btn{border:1px solid var(--border);background:var(--panel);border-radius:4px;font-size:0.72rem;font-weight:800;color:var(--text3);padding:2px 7px;cursor:pointer;flex-shrink:0;}
+.net-move-btn:disabled{opacity:0.3;cursor:default;}
+#host-room-code{font-family:'Cinzel',serif;font-size:2rem;font-weight:900;letter-spacing:0.35em;color:var(--gold);text-align:center;padding:8px 0 2px;}
+#online-wait-screen{display:none;position:fixed;inset:0;z-index:1100;background:#0e0c14;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;}
+#online-wait-screen.open{display:flex;}
+.online-wait-icon{font-size:3rem;opacity:0.6;}
+.online-wait-title{font-family:'Cinzel',serif;font-size:1.4rem;font-weight:900;color:var(--gold2);letter-spacing:0.2em;text-transform:uppercase;text-align:center;}
+.online-wait-sub{font-family:'Crimson Pro',serif;font-size:1rem;font-style:italic;color:#cfc8e0;text-align:center;max-width:340px;line-height:1.5;}
+.online-wait-btn{padding:14px 48px;border-radius:8px;border:1.5px solid var(--gold);background:rgba(138,106,16,0.15);color:var(--gold2);font-family:'Cinzel',serif;font-size:0.9rem;font-weight:700;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;}
+.online-wait-btn:hover{background:rgba(138,106,16,0.28);}
+body.net-client #action-bar,body.net-client #bid-bar,body.net-client #discard-pile,body.net-client #human-hand{pointer-events:none;}
+body.net-client.net-myturn #action-bar,body.net-client.net-myturn #bid-bar,body.net-client.net-myturn #discard-pile,body.net-client.net-myturn #human-hand{pointer-events:auto;}
+#net-spectate-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:1090;font-family:'Crimson Pro',serif;font-size:0.72rem;font-weight:800;color:var(--gold);background:rgba(232,228,240,0.95);border-top:1px solid var(--gold);text-align:center;padding:4px 8px;letter-spacing:0.04em;}
+body.net-client #net-spectate-banner{display:block;}
+body.net-client #action-bar{padding-bottom:38px;}
+
+@media(max-width:600px){
+  :root{--card-w:44px;--card-h:66px;--strip-w:13px;--meld-w:36px;--meld-h:54px;--dis-w:22px;--dis-h:34px;}
+  #side-panel{width:160px;}
+  .setup-box{padding:28px 20px;}
+  .game-title{font-size:1.6rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen" class="screen active">
+  <div class="setup-box">
+    <div class="game-title">BEN RUMMY</div>
+    <div class="game-subtitle">A BZF DECK CARD GAME</div>
+
+    <div class="setup-row" id="section-gamemode">
+      <span class="setup-label">GAME MODE</span>
+      <div class="btn-group" id="mode-group">
+        <button class="btn-opt sel" id="mode-local-btn" onclick="setGameMode('local')">Local</button>
+        <button class="btn-opt" id="mode-host-btn" onclick="setGameMode('host')">Host Online</button>
+        <button class="btn-opt" id="mode-join-btn" onclick="setGameMode('join')">Join Online</button>
+      </div>
+    </div>
+
+    <div class="setup-row" id="section-host-lobby" style="display:none">
+      <span class="setup-label">ROOM</span>
+      <div class="net-status" id="host-room-status">① Reaching signaling service…</div>
+      <div id="host-room-code" style="display:none"></div>
+      <div class="net-status" id="host-start-hint" style="display:none">When everyone's in, press Deal Cards below to start.</div>
+      <input class="setup-input" id="host-name-input" value="Host" placeholder="Your name" oninput="hostNameChanged()" style="margin-top:8px">
+      <div id="host-lobby-list" style="margin-top:6px"></div>
+    </div>
+
+    <div class="setup-row" id="section-join" style="display:none">
+      <span class="setup-label">JOIN A ROOM</span>
+      <input class="setup-input" id="join-name-input" placeholder="Your name" maxlength="20">
+      <input class="setup-input" id="join-code-input" placeholder="Room code (e.g. KWPX)" maxlength="4" style="text-transform:uppercase;margin-top:6px">
+      <button class="btn-start" id="join-btn" onclick="joinRoom()" style="margin-top:10px">JOIN ROOM</button>
+      <div class="net-status" id="join-status"></div>
+      <div id="join-lobby-list" style="margin-top:6px"></div>
+    </div>
+
+    <div class="setup-row" id="section-pcount">
+      <span class="setup-label">NUMBER OF PLAYERS</span>
+      <div class="btn-group" id="np-group">
+        <button class="btn-opt" onclick="selNP(2)">2P</button>
+        <button class="btn-opt" onclick="selNP(3)">3P</button>
+        <button class="btn-opt sel" onclick="selNP(4)">4P</button>
+        <button class="btn-opt" onclick="selNP(5)">5P</button>
+        <button class="btn-opt" onclick="selNP(6)">6P</button>
+      </div>
+    </div>
+
+    <div class="setup-row" id="section-seats">
+      <span class="setup-label">PLAYERS</span>
+      <div id="player-slots"></div>
+    </div>
+
+    <div class="setup-row" id="section-vp">
+      <span class="setup-label">TARGET VICTORY POINTS</span>
+      <div class="btn-group" id="vp-group" style="margin-bottom:8px;">
+        <button class="btn-opt" onclick="selVP(300)">300</button>
+        <button class="btn-opt" onclick="selVP(500)">500</button>
+        <button class="btn-opt sel" onclick="selVP(700)">700</button>
+        <button class="btn-opt" onclick="selVP(1000)">1000</button>
+      </div>
+      <input class="setup-input" type="number" id="vp-custom" placeholder="Or enter custom VP..." min="100" max="9999"
+        oninput="selVPCustom(this.value)">
+      <div class="vp-hint">Suggested: 300 – 1000 VP</div>
+    </div>
+
+    <button class="btn-start" id="begin-btn" onclick="startGame()">DEAL CARDS</button>
+  </div>
+</div>
+
+<!-- ONLINE WAIT SCREEN -->
+<div id="online-wait-screen">
+  <div class="online-wait-icon">🌐</div>
+  <div class="online-wait-title">Connected</div>
+  <div class="online-wait-sub" id="online-wait-msg">The host has started the game — receiving the table…</div>
+  <button class="online-wait-btn" onclick="netLeaveWait()">Leave Room</button>
+</div>
+
+<div id="net-spectate-banner">👁 Watching live — AI is playing your seat (your controls arrive in Phase 2b)</div>
+
+
+<!-- HANDOFF SCREEN -->
+<div id="handoff-screen" class="screen">
+  <div class="handoff-box">
+    <div class="handoff-label">NEXT TURN</div>
+    <div class="handoff-name" id="handoff-name">Player</div>
+    <div class="handoff-sub" id="handoff-sub">Pass the device, then tap to reveal your hand.</div>
+    <button class="btn-reveal" onclick="revealHand()">REVEAL HAND</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div id="score-bar">
+    <div id="score-chips"></div>
+    <div id="hand-goal"></div>
+  </div>
+
+  <!-- Full-width stacked layout -->
+  <div id="game-body">
+
+    <!-- AI tableaux (stacked full width) -->
+    <div id="ai-tableau-area"></div>
+
+    <!-- Discard strip (full width, horizontally scrollable) -->
+    <div id="discard-strip">
+      <div id="discard-strip-header">
+        <span class="strip-label">DISCARD PILE</span>
+        <span id="deck-count">Deck: 0</span>
+        <button id="log-toggle-btn" onclick="toggleLog()">LOG ▾</button>
+      </div>
+      <div id="discard-pile-scroll">
+        <div id="discard-pile"></div>
+      </div>
+      <div id="game-log-area" style="display:none;">
+        <div id="game-log"></div>
+      </div>
+    </div>
+
+    <!-- Human tableau (full width) -->
+    <div id="human-tableau-area"></div>
+
+    <!-- Human hand -->
+    <div id="human-hand-area">
+      <div class="hand-label">
+        YOUR HAND
+        <span class="hand-count" id="hand-count">0</span>
+        <span id="ai-thinking-indicator"></span>
+      </div>
+      <!-- Inline bid bar — shown when bid pending -->
+      <div id="bid-bar" style="display:none;">
+        <div id="bid-bar-inner">
+          <span class="bid-bar-label">DECLARE YOUR BID:</span>
+          <button class="bid-btn laoda" onclick="humanBid('laoda')">LAODA<span class="bid-hint">+40 bonus if 1st/2nd / −40 fail</span></button>
+          <button class="bid-btn pinyin" onclick="humanBid('pinyin')">PINYIN<span class="bid-hint">+30 bonus if 2nd/3rd / −30 fail</span></button>
+          <button class="bid-btn pass" onclick="humanBid(null)">PASS</button>
+        </div>
+      </div>
+      <div id="human-hand"></div>
+    </div>
+
+    <!-- Status message -->
+    <div id="action-status"></div>
+
+    <!-- Action bar -->
+    <div id="action-bar">
+      <button class="action-btn btn-draw-deck" id="btn-draw-deck" onclick="humanDrawDeck()">DRAW DECK</button>
+      <button class="action-btn btn-draw-dis" id="btn-draw-dis" onclick="humanDrawDiscard()">DRAW DISCARD</button>
+      <button class="action-btn btn-back" id="btn-back" onclick="humanUndoDiscard()">↩ BACK</button>
+      <button class="action-btn btn-meld" id="btn-meld" onclick="humanMeld()">MELD</button>
+      <button class="action-btn btn-layoff" id="btn-layoff" onclick="humanLayoff()">LAY OFF</button>
+      <button class="action-btn btn-displace" id="btn-displace" onclick="humanDisplace()">DISPLACE</button>
+      <button class="action-btn btn-discard" id="btn-discard" onclick="humanDiscard()">DISCARD</button>
+      <div id="meld-preview"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCORE SCREEN -->
+<div id="score-screen" class="screen">
+  <div class="score-box">
+    <div class="score-title" id="score-title">HAND COMPLETE</div>
+    <table class="score-table" id="score-table"></table>
+    <div class="score-btn-row">
+      <button class="score-btn primary" onclick="nextHand()">NEXT HAND</button>
+      <button class="score-btn secondary" onclick="newGame()">NEW GAME</button>
+    </div>
+  </div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="win-screen" class="screen">
+  <div class="score-box" style="max-width:700px;">
+    <div class="win-title" id="win-title">VICTORY!</div>
+    <div class="win-sub" id="win-sub"></div>
+    <table class="score-table" id="win-score-table" style="margin-top:16px;"></table>
+    <div class="score-btn-row" style="margin-top:20px;">
+      <button class="score-btn primary" onclick="newGame()">PLAY AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="br-tooltip"></div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════
+const SUITS_ALL = ['Hearts','Swords','Diamonds','Coins','Moon','Sun'];
+const SUIT_ICON = {Hearts:'♥',Swords:'⚔',Diamonds:'♦',Coins:'●',Moon:'☾',Sun:'☀'};
+const RNAME = {1:'Ace',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'Page',12:'Knight',13:'Queen',14:'King',15:'Joker'};
+const RSHORT = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'Pg',12:'Kn',13:'Q',14:'K'};
+const AI_NAMES = ['North','East','South','West','Zephyr'];
+
+// VP card flags
+function isStarCard(rank)  { return [1,2,9,11].includes(rank); }   // Ace, 2, 9, Page
+function isArrowCard(rank) { return [2,3,6].includes(rank); }        // 2, 3, 6
+function isSkullCard(rank) { return [7,9,12].includes(rank); }       // 7, 9, Knight
+function isTPCard(rank)    { return [4,10,13].includes(rank); }      // 4, 10, Queen
+// Jokers: TD=+5 Arrow, TC=-5
+
+// ══════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════
+let G = {};
+
+// Setup selections
+let setupNP = 4;
+let setupVP = 700;
+// Player configs: [{name, isHuman}] indexed 0..5
+let setupPlayers = [
+  {name:'You', isHuman:true},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+];
+
+const AI_DEFAULTS = ['North','East','South','West','Zephyr'];
+
+function renderPlayerSlots() {
+  const container = document.getElementById('player-slots');
+  if(!container) return;
+  container.innerHTML = '';
+  for(let i=0;i<setupNP;i++) {
+    const cfg = setupPlayers[i];
+    const slot = document.createElement('div');
+    slot.className = 'player-slot';
+    if(i===0) {
+      slot.innerHTML=
+        '<span class="slot-num">1</span>'+
+        '<input class="slot-name-input" type="text" value="'+cfg.name+'" placeholder="Your name" '+
+          'oninput="setupPlayers[0].name=this.value;setupPlayers[0].isHuman=true;">'+
+        '<span class="slot-you">★ YOU</span>';
+    } else {
+      slot.innerHTML=
+        '<span class="slot-num">'+(i+1)+'</span>'+
+        '<input class="slot-name-input" type="text" value="'+cfg.name+'" '+
+          'placeholder="Enter name for human, leave blank for AI" '+
+          'oninput="setupPlayers['+i+'].name=this.value;setupPlayers['+i+'].isHuman=this.value.trim().length>0;">';
+    }
+    container.appendChild(slot);
+  }
+}
+
+function setSlotType(i, isHuman) {
+  setupPlayers[i].isHuman = isHuman;
+  renderPlayerSlots();
+}
+
+function selNP(n) {
+  setupNP = n;
+  document.querySelectorAll('#np-group .btn-opt').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#np-group .btn-opt').forEach(b => { if(b.textContent===n+'P') b.classList.add('sel'); });
+  renderPlayerSlots();
+}
+function selVP(v) {
+  setupVP = v;
+  document.getElementById('vp-custom').value = '';
+  document.querySelectorAll('#vp-group .btn-opt').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#vp-group .btn-opt').forEach(b => { if(parseInt(b.textContent)===v) b.classList.add('sel'); });
+}
+function selVPCustom(v) {
+  const n = parseInt(v);
+  if(n > 0) { setupVP = n; document.querySelectorAll('#vp-group .btn-opt').forEach(b=>b.classList.remove('sel')); }
+}
+
+// Init slots on page load
+document.addEventListener('DOMContentLoaded', renderPlayerSlots);
+
+// ══════════════════════════════════════════════
+// CARD FACTORY
+// ══════════════════════════════════════════════
+let _cardId = 0;
+function newCard(suit, rank, subtype) {
+  return {
+    id: ++_cardId,
+    suit, rank,
+    subtype: subtype || null,
+    role: null,
+    get isJoker()  { return this.rank === 15; },
+    get isTopDog() { return this.role === 'TopDog'; },
+    get isTopCat() { return this.role === 'TopCat'; },
+    get isStar()   { return !this.isJoker && isStarCard(this.rank); },
+    get isArrow()  { return !this.isJoker && isArrowCard(this.rank); },
+    get isSkull()  { return !this.isJoker && isSkullCard(this.rank); },
+    get isTP()     { return (!this.isJoker && isTPCard(this.rank)) || this.isTopDog || this.isTopCat; },
+    get tpValue()  {
+      if(this.isTopDog) return 5;
+      if(this.isTopCat) return -5;
+      if(this.rank===4) return 5;
+      if(this.rank===10) return 10;
+      if(this.rank===13) return 10;
+      return 0;
+    },
+    get penaltyVP(){ return this.isSkull ? -5 : 0; }, // Jokers no longer penalize in hand
+    get displayRank() {
+      if(this.isJoker) return this.isTopDog ? 'TD' : 'TC';
+      if(this.rank===1) return 'A';
+      if(this.rank===11) return 'Pg';
+      if(this.rank===12) return 'Kn';
+      if(this.rank===13) return 'Q';
+      if(this.rank===14) return 'K';
+      return String(this.rank);
+    },
+    get stripRank() {
+      // Strip always shows numbers (TD/TC stay as-is, Ace stays A)
+      if(this.isJoker) return this.isTopDog ? 'TD' : 'TC';
+      return String(this.rank);
+    },
+    get name() {
+      if(this.isTopDog) return 'Top Dog ('+this.suit+')';
+      if(this.isTopCat) return 'Top Cat ('+this.suit+')';
+      if(this.subtype==='pageAdult') return 'Page-A of '+this.suit;
+      if(this.subtype==='pageChild') return 'Page-B of '+this.suit;
+      return (RNAME[this.rank]||this.rank)+' of '+this.suit;
+    },
+    get sortKey() {
+      if(this.isTopDog) return 9999;
+      if(this.isTopCat) return 9998;
+      const sIdx = SUITS_ALL.indexOf(this.suit);
+      return this.rank * 10 + sIdx;
+    },
+    get vpLabel() {
+      if(this.isTopDog) return 'TP+5';
+      if(this.isTopCat) return 'TP-5';
+      if(this.rank===1) return '★+10';
+      if(this.rank===2) return '★↑+5';
+      if(this.rank===9) return '★☠';
+      if(this.rank===11) return '★+5';
+      if(this.isArrow)  return '↑+5';
+      if(this.isSkull)  return '☠-5';
+      if(this.isTP)     return 'TP+'+this.tpValue;
+      return '';
+    },
+    get vpSymbol() {
+      if(this.isTopDog) return 'TP';
+      if(this.isTopCat) return 'TP';
+      if(this.rank===1) return '★';
+      if(this.rank===2) return '★↑';
+      if(this.rank===9) return '★☠';
+      if(this.rank===11) return '★';
+      if(this.isArrow)  return '↑';
+      if(this.isSkull)  return '☠';
+      if(this.isTP)     return 'TP';
+      return '';
+    }
+  };
+}
+
+function buildSuit(suit) {
+  const c = [];
+  for(let r=1;r<=14;r++) c.push(newCard(suit,r)); // Ace through King, 1 each
+  c.push(newCard(suit,15)); // Joker
+  return c; // 16 cards per suit
+}
+
+function buildDeck(nPlayers) {
+  const deckCount = nPlayers >= 5 ? 2 : 1;
+  const cards = [];
+  for(let d=0;d<deckCount;d++) {
+    for(const suit of SUITS_ALL) cards.push(...buildSuit(suit));
+  }
+  // Assign joker roles: half TD, half TC
+  const jokers = cards.filter(c=>c.isJoker);
+  const half = Math.floor(jokers.length / 2);
+  shuffle(jokers);
+  jokers.forEach((j,i) => { j.role = i < half ? 'TopDog' : 'TopCat'; });
+  return shuffle(cards);
+}
+
+function shuffle(a) {
+  for(let i=a.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+// ══════════════════════════════════════════════
+// MELD VALIDATION
+// ══════════════════════════════════════════════
+// Returns {valid, type, reason} 
+// type: 'SF' (straight flush) or 'SET'
+function validateMeld(cards) {
+  if(!cards || cards.length < 3) return {valid:false, reason:'Need 3+ cards'};
+  
+  const jokers = cards.filter(c=>c.isJoker);
+  const nonJokers = cards.filter(c=>!c.isJoker);
+  
+  if(jokers.length > 1) return {valid:false, reason:'Only 1 Joker per meld'};
+  
+  // Try SET: same rank, all different suits
+  const setSuited = trySet(cards);
+  if(setSuited.valid) return setSuited;
+  
+  // Try SF: consecutive same suit
+  const sfResult = trySF(cards);
+  if(sfResult.valid) return sfResult;
+  
+  return {valid:false, reason:'Not a valid Set or Straight Flush'};
+}
+
+function trySet(cards) {
+  const jokers = cards.filter(c=>c.isJoker);
+  const nonJokers = cards.filter(c=>!c.isJoker);
+  if(jokers.length > 1) return {valid:false};
+  
+  // All non-jokers must share the same rank
+  const ranks = [...new Set(nonJokers.map(c=>c.rank))];
+  if(ranks.length !== 1) return {valid:false};
+  
+  // All suits must be different
+  const suits = nonJokers.map(c=>c.suit);
+  if(new Set(suits).size !== suits.length) return {valid:false, reason:'Sets require different suits'};
+  
+  // If there's a joker, it takes a phantom suit - must not conflict
+  // (joker fills a missing suit slot, so total suits still all different)
+  
+  const isComplete = cards.length === 6 && jokers.length === 0 && new Set(suits).size === 6;
+  return {valid:true, type:'SET', rank:ranks[0], isComplete};
+}
+
+function trySF(cards) {
+  const jokers = cards.filter(c=>c.isJoker);
+  const nonJokers = cards.filter(c=>!c.isJoker);
+  if(jokers.length > 1) return {valid:false};
+  
+  // All non-jokers must share the same suit
+  const suits = [...new Set(nonJokers.map(c=>c.suit))];
+  if(suits.length !== 1) return {valid:false};
+  const suit = suits[0];
+  
+  // Get ranks, check they form a consecutive sequence with optional 1 gap for joker
+  const ranks = nonJokers.map(c=>c.rank).sort((a,b)=>a-b);
+  const min = ranks[0], max = ranks[ranks.length-1];
+  const span = max - min + 1;
+  
+  if(jokers.length === 0) {
+    // Must be exactly consecutive, no duplicates
+    if(span !== cards.length) return {valid:false};
+    if(new Set(ranks).size !== ranks.length) return {valid:false, reason:'Duplicate ranks in SF'};
+  } else {
+    // 1 joker: can fill an internal gap OR extend at start/end
+    const uniqueRanks = [...new Set(ranks)];
+    if(uniqueRanks.length !== nonJokers.length) return {valid:false, reason:'Duplicate ranks in SF'};
+    // Valid if: span == cards.length (internal gap) OR span == cards.length-1 (joker at start or end)
+    if(span !== cards.length && span !== cards.length - 1) return {valid:false, reason:'Joker must extend or fill sequence'};
+  }
+  
+  const isComplete = cards.length === 6 && jokers.length === 0;
+  return {valid:true, type:'SF', suit, low:min, high:max, isComplete};
+}
+
+// Award +5 VP immediately to the player who just completed a meld
+function awardCompletionBonus(meld, wasComplete) {
+  if(!meld.isComplete || wasComplete) return;
+  const completer = currentPlayer();
+  completer.totalVP += 10;
+  glog((completer.isHuman?'You':completer.name)+' completed a '+meld.type+' meld! +10 VP','good');
+}
+// Award immediate Star VP to the player who played those cards
+function awardStarVP(cards, player) {
+  let vp = 0;
+  for(const c of cards) {
+    if(c.rank === 1) vp += 10;       // Ace = +10★
+    else if(c.rank === 2) vp += 5;   // 2 = +5★
+    else if(c.rank === 9) vp += 5;   // 9 = +5★ (dual card)
+    else if(c.rank === 11) vp += 5;  // Page = +5★
+  }
+  if(vp > 0) {
+    player.totalVP += vp;
+    glog((player.isHuman?'You':player.name)+' scored +'+vp+' Star VP!','good');
+  }
+}
+
+// Uniform font size for all ranks in strip (no shrinking for double digits)
+function rankFontStyle(rankStr) {
+  return ''; // uniform — CSS handles sizing
+}
+
+function sortSFMeld(meld) {
+  if(meld.type !== 'SF') return;
+  const nonJokers = meld.cards.filter(c=>!c.isJoker).sort((a,b)=>a.rank-b.rank);
+  const joker = meld.cards.find(c=>c.isJoker);
+  if(!joker) { meld.cards = nonJokers; return; }
+  // Find the gap and insert joker there
+  let inserted = false;
+  const sorted = [];
+  for(let i=0;i<nonJokers.length;i++) {
+    if(!inserted && i>0 && nonJokers[i].rank - nonJokers[i-1].rank > 1) {
+      sorted.push(joker);
+      inserted = true;
+    }
+    sorted.push(nonJokers[i]);
+  }
+  // If gap not found (joker at start or end), append at end — caller knows position
+  if(!inserted) sorted.push(joker);
+  meld.cards = sorted;
+}
+// A meld is locked (complete, no further layoff/displace) when it has 6 cards and no Joker
+function isMeldLocked(meld) {
+  return meld.cards.length >= 6 && !meld.cards.some(c=>c.isJoker);
+}
+
+// Check if card can extend a meld (layoff)
+function canLayoff(card, meld) {
+  if(meld.cards.length >= 6) return false; // max 6 cards
+  if(isMeldLocked(meld)) return false;
+  const newCards = [...meld.cards, card];
+  const result = validateMeld(newCards);
+  return result.valid;
+}
+
+// A pure skull sextet: locked 6-card Set where all cards are the same skull rank, no Joker
+function isSkullSextet(meld) {
+  if(!isMeldLocked(meld)) return false;
+  if(meld.type !== 'SET') return false;
+  if(meld.cards.length !== 6) return false;
+  return meld.cards.every(c=>c.isSkull);
+}
+function getMeldJoker(meld) {
+  if(isMeldLocked(meld)) return null;
+  return meld.cards.find(c=>c.isJoker) || null;
+}
+
+// ══════════════════════════════════════════════
+// SCORING
+// ══════════════════════════════════════════════
+function scoreMeld(meld) {
+  // Used for TD ownership transfer direction only
+  let vp = 0;
+  for(const c of meld.cards) {
+    if(c.isTP) vp += c.tpValue;   // TD +5, TC -5, rank 4/10/Q positive
+    else if(c.isSkull) vp -= 5;
+  }
+  return vp;
+}
+
+function meldIsPositive(meld) {
+  return scoreMeld(meld) >= 0;
+}
+
+// Full hand scoring for all players
+function scoreHand(players) {
+  const scores = players.map((p,i) => {
+    // Hand penalty: -5 per Skull still in hand (Jokers no longer penalize)
+    const handPenalty = p.hand.reduce((s,c) => s + c.penaltyVP, 0);
+
+    let skullVP = 0, arrowCount = 0, completedBonus = 0, tpVP = 0;
+    const wentOut = !!p.goOutPosition;
+
+    for(const m of p.tableau) {
+      const locked = isMeldLocked(m);
+      for(const c of m.cards) {
+        // Arrow (ranks 2,3,6 — note rank 2 counts as arrow too)
+        if(c.isArrow) arrowCount++;
+        // Skull — only penalizes if player went out
+        if(c.isSkull && !locked && wentOut) skullVP -= 5;
+        // TP — TD/TC and ranks 4,10,Q
+        if(c.isTP) tpVP += c.tpValue;
+      }
+      if(locked) completedBonus += 10;
+    }
+
+    // TP cards still in hand — collected for pool distribution later
+    const handTPPool = p.hand.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0);
+
+    return { idx:i, skullVP, skullPenalty:skullVP, starVP:0, tdVP:0, tcVP:0,
+             arrowCount, completedBonus, tpVP, handTPPool, handPenalty };
+  });
+
+  // Team arrow VP: only scored if at least 1 team member went out
+  // Sum arrow counts across ALL team members, award total × 5 to every team member
+  const teamNums = [...new Set(players.map(p=>p.team))];
+  teamNums.forEach(team => {
+    const teamPlayers = players.filter(p=>p.team===team);
+    const teamWentOut = teamPlayers.some(p=>p.goOutPosition);
+    if(!teamWentOut) {
+      scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = 0; });
+    } else {
+      const totalArrows = teamPlayers.reduce((sum,p) => {
+        const ps = scores[players.indexOf(p)];
+        return sum + (ps ? ps.arrowCount : 0);
+      }, 0);
+      scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = totalArrows * 5; });
+    }
+  });
+
+  // TP hand pool: TP cards still in hand at hand-end
+  // Total pooled, divided evenly among 1st-out player's team, remainder to 1st-out
+  const totalHandTP = scores.reduce((s,sc) => s + sc.handTPPool, 0);
+  if(totalHandTP !== 0) {
+    const firstOut = players.find(p=>p.goOutPosition===1);
+    if(firstOut) {
+      const firstOutTeam = players.filter(p=>p.team===firstOut.team);
+      const share = Math.floor(totalHandTP / firstOutTeam.length);
+      const remainder = totalHandTP - share * firstOutTeam.length;
+      scores.forEach((s,i) => {
+        if(players[i].team === firstOut.team) s.tpVP += share;
+        if(players[i].seat === firstOut.seat) s.tpVP += remainder;
+      });
+    }
+  }
+
+  // Locked meld team bonus: most locked melds = +25 each, no tie
+  scores.forEach((s,i) => {
+    s.lockedCount = 0;
+    for(const m of players[i].tableau) if(isMeldLocked(m)) s.lockedCount++;
+    s.lockedBonus = 0;
+  });
+  const teams = [...new Set(players.map(p=>p.team))];
+  const teamLocked = {};
+  teams.forEach(t => { teamLocked[t] = scores.filter((s,i)=>players[i].team===t).reduce((sum,s)=>sum+s.lockedCount,0); });
+  const maxLocked = Math.max(...Object.values(teamLocked));
+  const teamsWithMax = teams.filter(t=>teamLocked[t]===maxLocked);
+  if(maxLocked > 0 && teamsWithMax.length === 1) {
+    const winningTeam = teamsWithMax[0];
+    scores.forEach((s,i) => { if(players[i].team===winningTeam) s.lockedBonus = 25; });
+  }
+
+  // Skull sextet team bonus: +60 VP to every team member for each pure skull sextet owned
+  scores.forEach((s,i) => { s.skullSextetBonus = 0; });
+  players.forEach((p,i) => {
+    const sextetCount = p.tableau.filter(m=>isSkullSextet(m)).length;
+    if(sextetCount > 0) {
+      // Award +60 VP per sextet to every member of this player's team
+      scores.forEach((s,j) => {
+        if(players[j].team === p.team) s.skullSextetBonus += sextetCount * 60;
+      });
+    }
+  });
+
+  // Team out bonus: +50 if 2 team members went out, +100 if 3 — exclusive, all team members earn it
+  scores.forEach((s,i) => { s.teamOutBonus = 0; });
+  const teamsOut = {};
+  teams.forEach(t => {
+    const outCount = players.filter(p=>p.team===t && p.goOutPosition).length;
+    teamsOut[t] = outCount;
+  });
+  scores.forEach((s,i) => {
+    const outCount = teamsOut[players[i].team];
+    if(outCount >= 3) s.teamOutBonus = 100;
+    else if(outCount >= 2) s.teamOutBonus = 50;
+  });
+
+  // Go-out position bonuses
+  const posVP = {1:40, 2:30, 3:20};
+  scores.forEach((s,i) => {
+    s.goOutBonus = 0; s.ginBonus = 0; s.bidBonus = 0;
+    const p = players[i];
+    const pos = p.goOutPosition;
+    if(pos) {
+      s.goOutBonus = posVP[pos] || 0;
+      if(p.goOutIsGin) s.ginBonus = 25;
+    }
+  });
+
+  // Bid bonus/penalty with team-based rules — runs ONCE, outside per-player loop
+  const bidTeams = [...new Set(players.map(p=>p.team))];
+  const is2P = players.length === 2;
+
+  bidTeams.forEach(team => {
+    const teamPlayers = players.filter(p=>p.team===team);
+    ['laoda','pinyin'].forEach(bidType => {
+      const declarers = teamPlayers.filter(p=>p.bid===bidType);
+      if(declarers.length === 0) return;
+      const bonus   = bidType==='laoda' ? 50 : 25;
+      const penalty = bidType==='laoda' ? -50 : -25;
+      // Pinyin now succeeds at ANY go-out position
+      const successPos = bidType==='laoda' ? [1,2] : [1,2,3];
+
+      declarers.forEach((p, di) => {
+        const pi = players.indexOf(p);
+        const pos = p.goOutPosition;
+        const success = pos && successPos.includes(pos);
+        const isFirst = di === 0;
+
+        if(success) {
+          // Success: bonus to whole team
+          scores.forEach((ts,ti) => { if(players[ti].team===team) ts.bidBonus += bonus; });
+        } else {
+          if(is2P && bidType==='laoda' && !isFirst) {
+            // 2P exception: 2nd Laoda declarer fails → no penalty to self, +50 to opponent
+            scores.forEach((ts,ti) => { if(players[ti].team!==team) ts.bidBonus += 50; });
+          } else if(isFirst) {
+            // 1st declarer failure: penalty to whole team
+            scores.forEach((ts,ti) => { if(players[ti].team===team) ts.bidBonus += penalty; });
+          } else {
+            // Subsequent declarer failure: individual only
+            scores[pi].bidBonus += penalty;
+          }
+        }
+      });
+    });
+  });
+
+  // Total
+  scores.forEach(s => {
+    s.total = s.arrowVP + s.skullVP + s.tpVP + s.completedBonus + s.lockedBonus + s.skullSextetBonus + s.handPenalty + s.goOutBonus + s.ginBonus + s.bidBonus + s.teamOutBonus;
+  });
+
+  return scores;
+}
+
+// ══════════════════════════════════════════════
+// TEAM ASSIGNMENT
+// ══════════════════════════════════════════════
+// Top-scoring players go solo: 3P→top 1, 4P→top 2, 5P/6P→top 3.
+// Remaining players share Team 1. 2P is unchanged (already 1v1).
+function getSoloCount(n) {
+  if(n <= 2) return 0;
+  if(n === 3) return 1;
+  if(n === 4) return 2;
+  return 3; // 5P+
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// Interleaves groups of players (round-robin, largest group first) so that
+// members of the shared team are spread out in turn order rather than
+// sitting consecutively.
+function interleaveGroups(groups) {
+  const queues = groups.map(g => [...g]).sort((a,b) => b.length - a.length);
+  const result = [];
+  let remaining = queues.reduce((sum,q) => sum+q.length, 0);
+  while(remaining > 0) {
+    for(const q of queues) {
+      if(q.length) { result.push(q.shift()); remaining--; }
+    }
+  }
+  return result;
+}
+
+function assignTeams(players) {
+  const n = players.length;
+
+  if(n <= 2) {
+    // Unchanged: lower VP = team 1, higher VP = team 2
+    const sorted = [...players].sort((a,b) => a.totalVP - b.totalVP);
+    sorted.forEach((p,i) => { p.team = i===0 ? 1 : 2; p.isSolo = false; });
+    sorted.forEach((p,i) => { p.seat = i; });
+    return sorted;
+  }
+
+  // 3P+: top VP players go solo (yellow), everyone else shares Team 1 (blue).
+  // Shuffle first so ties — including right at the solo cutoff — break randomly,
+  // then stable-sort descending by VP.
+  const soloCount = getSoloCount(n);
+  const sorted = shuffleArray(players).sort((a,b) => b.totalVP - a.totalVP);
+
+  let nextSoloTeam = 2;
+  const soloPlayers = [];
+  const sharedPlayers = [];
+  sorted.forEach((p,i) => {
+    if(i < soloCount) {
+      p.team = nextSoloTeam++;
+      p.isSolo = true;
+      soloPlayers.push(p);
+    } else {
+      p.team = 1;
+      p.isSolo = false;
+      sharedPlayers.push(p);
+    }
+  });
+
+  // Seat order: each solo player is its own group of 1; the shared team is
+  // one group. Interleaving spreads the shared team out around the table.
+  const groups = soloPlayers.map(p => [p]);
+  if(sharedPlayers.length) groups.push(sharedPlayers);
+  const ordered = interleaveGroups(groups);
+  ordered.forEach((p,i) => { p.seat = i; });
+  return ordered;
+}
+
+// Text color for a player's name/UI elements based on solo/team status.
+function teamColor(p) {
+  if(p.isSolo) return '#a8820a';
+  return p.team===1 ? '#1a5aaa' : '#aa2018';
+}
+// Lighter variant for dark-background contexts (e.g. score table rows).
+function teamColorLight(p) {
+  if(p.isSolo) return '#f0c419';
+  return p.team===1 ? '#6ab4ff' : '#ff8a7a';
+}
+// CSS class suffix for team badges/chips.
+function teamBadgeClass(p) {
+  return p.isSolo ? 'solo' : ('t'+p.team);
+}
+// Display label for team badges/chips.
+function teamBadgeLabel(p) {
+  return p.isSolo ? 'SOLO' : ('T'+p.team);
+}
+
+// ══════════════════════════════════════════════
+// TD/TC OWNERSHIP TRANSFER
+// ══════════════════════════════════════════════
+function transferMeldOwnership(meld) {
+  // Positive scoring meld → lowest VP player owns it
+  // Negative scoring meld → highest VP player owns it
+  const score = scoreMeld(meld);
+  const players = G.players;
+  const sorted = [...players].sort((a,b)=>a.totalVP-b.totalVP);
+  if(score >= 0) {
+    meld.ownerIdx = sorted[0].seat;
+  } else {
+    meld.ownerIdx = sorted[sorted.length-1].seat;
+  }
+}
+
+// ══════════════════════════════════════════════
+// GAME INIT
+// ══════════════════════════════════════════════
+// ══ ONLINE MULTIPLAYER (Phase 1) ══
+const NET = { mode:'local', peer:null, roomCode:null, joiners:[], hostConn:null, started:false, myName:'', seatAssign:{}, remoteSeats:{}, mySeat:null, inGame:false, stateInterval:null, lastScreenId:'setup-screen' };
+const NET_PREFIX = 'benrummy-';
+const netEsc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function netRoomCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; return c; }
+function netStatus(elId, msg, cls){ const el=document.getElementById(elId); if(!el) return; el.textContent=msg; el.className='net-status'+(cls?' '+cls:''); }
+
+function setGameMode(mode){
+  netTeardown();
+  NET.mode = mode;
+  document.getElementById('mode-local-btn').className = 'btn-opt' + (mode==='local'?' sel':'');
+  document.getElementById('mode-host-btn').className  = 'btn-opt' + (mode==='host' ?' sel':'');
+  document.getElementById('mode-join-btn').className  = 'btn-opt' + (mode==='join' ?' sel':'');
+  const isJoin = mode==='join';
+  document.querySelectorAll('#setup-screen .setup-row').forEach(sec=>{
+    if (sec.id==='section-gamemode')   { sec.style.display=''; return; }
+    if (sec.id==='section-host-lobby') { sec.style.display = mode==='host'?'':'none'; return; }
+    if (sec.id==='section-join')       { sec.style.display = isJoin?'':'none'; return; }
+    if (sec.id==='section-seats')      { sec.style.display = mode==='local'?'':'none'; return; }
+    sec.style.display = isJoin?'none':'';
+  });
+  document.getElementById('begin-btn').style.display = isJoin?'none':'';
+  if (mode==='host') netInitHost();
+}
+
+function netTeardown(){
+  if (NET.peer) { try{ NET.peer.destroy(); }catch(e){} }
+  NET.peer=null; NET.hostConn=null; NET.joiners=[]; NET.roomCode=null; NET.started=false; NET.seatAssign={};
+  NET.remoteSeats={}; NET.mySeat=null; NET.inGame=false; NET._lastLog=null; NET._lastScreenSeen=null;
+  if (NET.stateInterval){ clearInterval(NET.stateInterval); NET.stateInterval=null; }
+  document.body.classList.remove('net-client');
+  document.body.classList.remove('net-myturn');
+  const codeEl=document.getElementById('host-room-code'); if(codeEl){ codeEl.style.display='none'; codeEl.textContent=''; }
+  const hintEl=document.getElementById('host-start-hint'); if(hintEl) hintEl.style.display='none';
+  const hl=document.getElementById('host-lobby-list'); if(hl) hl.innerHTML='';
+  const jl=document.getElementById('join-lobby-list'); if(jl) jl.innerHTML='';
+  netStatus('join-status','');
+  document.getElementById('online-wait-screen')?.classList.remove('open');
+}
+
+/* ── HOST SIDE ── */
+function netInitHost(attempt){
+  if (typeof Peer === 'undefined'){
+    netStatus('host-room-status','Loading network library…');
+    window._peerRetryLoad(ok=>{
+      if (NET.mode!=='host') return;
+      if (ok) netInitHost(attempt);
+      else netStatus('host-room-status','Could not load the network library from any source — your network may be blocking CDN scripts.','err');
+    });
+    return;
+  }
+  attempt = attempt||0;
+  if (attempt > 4){ netStatus('host-room-status','Could not reserve a room code — try again later.','err'); return; }
+  const code = netRoomCode();
+  netStatus('host-room-status','① Reaching signaling service…');
+  const peer = new Peer(NET_PREFIX + code);
+  NET.peer = peer;
+  let hostSettled = false;
+  setTimeout(()=>{
+    if (!hostSettled && NET.peer===peer)
+      netStatus('host-room-status','✕ Could not reach the signaling service (step ①) after 15 seconds — a browser extension, security software, or a sandboxed viewer may be blocking it. Try another browser or check extensions.','err');
+  }, 15000);
+  peer.on('open', ()=>{
+    hostSettled = true;
+    NET.roomCode = code;
+    netStatus('host-room-status','① Signaling ✓ — Room open! Share this code with your friends:','ok');
+    const codeEl=document.getElementById('host-room-code');
+    codeEl.textContent = code; codeEl.style.display='';
+    const hint=document.getElementById('host-start-hint'); if(hint) hint.style.display='';
+    netRenderHostLobby();
+  });
+  peer.on('connection', conn=>{
+    conn.on('data', d=>netHostData(conn,d));
+    conn.on('close', ()=>{
+      NET.joiners = NET.joiners.filter(j=>j.conn!==conn);
+      for (const k of Object.keys(NET.seatAssign)) if (NET.seatAssign[k].conn===conn) delete NET.seatAssign[k];
+      netRenderHostLobby(); netBroadcastLobby();
+    });
+    conn.on('error', ()=>{});
+  });
+  peer.on('error', e=>{
+    hostSettled = true;
+    if (e.type==='unavailable-id'){ try{peer.destroy();}catch(_){} if(NET.peer===peer){ NET.peer=null; netInitHost(attempt+1); } }
+    else if (NET.peer===peer) netStatus('host-room-status','Network error: '+e.type,'err');
+  });
+}
+function netHostData(conn, d){
+  if (!d || typeof d!=='object') return;
+  if (d.t==='hello'){
+    if (NET.joiners.some(j=>j.conn===conn)) return;
+    const name = String(d.name||'Friend').slice(0,20).trim() || 'Friend';
+    const j = { name, conn };
+    NET.joiners.push(j);
+    netPlaceUnseated();
+    netRenderHostLobby(); netBroadcastLobby();
+  }
+  else if (d.t==='intent'){
+    const seat = netSeatOfConn(conn);
+    if (seat===null) return;
+    netApplyIntent(seat, d);
+  }
+}
+function netSeatOfConn(conn){
+  for (const k of Object.keys(NET.remoteSeats)) if (NET.remoteSeats[k]===conn) return +k;
+  return null;
+}
+function netSeatedJoiners(){ return new Set(Object.values(NET.seatAssign)); }
+function netPlaceUnseated(){
+  const n = setupNP;
+  // evict assignments beyond current player count
+  for (const k of Object.keys(NET.seatAssign)) if (+k >= n) delete NET.seatAssign[k];
+  // drop assignments whose joiner left
+  for (const k of Object.keys(NET.seatAssign)) if (!NET.joiners.includes(NET.seatAssign[k])) delete NET.seatAssign[k];
+  // seat unassigned joiners into free seats, join order (seat 0 = host, so seats start at 1)
+  const seated = netSeatedJoiners();
+  for (const j of NET.joiners){
+    if (seated.has(j)) continue;
+    for (let seat=1; seat<n; seat++){
+      if (!NET.seatAssign[seat]){ NET.seatAssign[seat]=j; seated.add(j); break; }
+    }
+  }
+}
+function netSeatMove(seat, dir){
+  if (NET.started) return;
+  const n = setupNP;
+  const target = seat + dir;
+  if (target < 1 || target >= n) return;
+  const a = NET.seatAssign[seat], b = NET.seatAssign[target];
+  if (a) NET.seatAssign[target] = a; else delete NET.seatAssign[target];
+  if (b) NET.seatAssign[seat] = b; else delete NET.seatAssign[seat];
+  netRenderHostLobby(); netBroadcastLobby();
+}
+function netLobbyMsg(){
+  const n = setupNP;
+  const seats = []; for (let i=1;i<n;i++) seats.push(NET.seatAssign[i] ? NET.seatAssign[i].name : null);
+  const seated = netSeatedJoiners();
+  return { t:'lobby', code:NET.roomCode, nPlayers:n,
+    hostName: document.getElementById('host-name-input')?.value.trim()||'Host',
+    seats, unseated: NET.joiners.filter(j=>!seated.has(j)).map(j=>j.name), started: NET.started };
+}
+function netBroadcast(msg){ NET.joiners.forEach(j=>{ try{ j.conn.send(msg); }catch(e){} }); }
+function netBroadcastLobby(){ netBroadcast(netLobbyMsg()); }
+function hostNameChanged(){ if (NET.mode==='host') netBroadcastLobby(); }
+function netRenderHostLobby(){
+  const el=document.getElementById('host-lobby-list'); if(!el) return;
+  const n=setupNP; let html='';
+  for (let i=1;i<n;i++){
+    const j=NET.seatAssign[i];
+    const arrows = `<button class="net-move-btn" onclick="netSeatMove(${i},-1)" ${i<=1?'disabled':''} title="Move up">▲</button>`+
+      `<button class="net-move-btn" onclick="netSeatMove(${i},1)" ${i>=n-1?'disabled':''} title="Move down">▼</button>`;
+    html += j ? `<div class="net-lobby-row"><span class="seat-num">${i+1}</span><span class="who">${netEsc(j.name)}</span>${arrows}<span class="tag">👤 Connected</span></div>`
+      : `<div class="net-lobby-row open-seat"><span class="seat-num">${i+1}</span><span class="who">Open seat</span><span class="tag">🤖 AI if empty</span></div>`;
+  }
+  const seated = netSeatedJoiners();
+  for (const j of NET.joiners){
+    if (seated.has(j)) continue;
+    html += `<div class="net-lobby-row open-seat"><span class="seat-num">—</span><span class="who">${netEsc(j.name)}</span><span class="tag">No seat — raise player count</span></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ── CLIENT SIDE ── */
+function joinRoom(attempt){
+  attempt = attempt || 1;
+  if (typeof Peer === 'undefined'){
+    netStatus('join-status','Loading network library…');
+    window._peerRetryLoad(ok=>{
+      if (NET.mode!=='join') return;
+      if (ok) joinRoom(attempt);
+      else netStatus('join-status','Could not load the network library from any source — your network may be blocking CDN scripts.','err');
+    });
+    return;
+  }
+  const name = (document.getElementById('join-name-input').value||'').trim();
+  const code = (document.getElementById('join-code-input').value||'').trim().toUpperCase();
+  if (!name){ netStatus('join-status','Please enter your name.','err'); return; }
+  if (!/^[A-Z]{4}$/.test(code)){ netStatus('join-status','Room code is 4 letters (e.g. KWPX).','err'); return; }
+  netTeardown(); NET.mode='join'; NET.myName=name;
+  let stage = 1, settled = false;
+  netStatus('join-status','① Reaching signaling service…' + (attempt>1?' (attempt '+attempt+' of 2)':''));
+  const peer = new Peer();
+  NET.peer = peer;
+  setTimeout(()=>{
+    if (settled || NET.peer!==peer) return;
+    if (attempt < 2){
+      netStatus('join-status','Timed out at step '+(stage===1?'①':'②')+' — retrying automatically…','err');
+      setTimeout(()=>{ if (NET.peer===peer && !settled) joinRoom(attempt+1); }, 800);
+    } else if (stage===1){
+      netStatus('join-status','✕ Could not reach the signaling service (step ①) after 2 attempts — a browser extension, security software, or a sandboxed viewer may be blocking it. Try another browser.','err');
+    } else {
+      netStatus('join-status','① Signaling ✓ → ✕ but the link to the host failed (step ②) after 2 attempts — the free relay service may be degraded right now, or a firewall is blocking peer connections. Retrying later usually fixes this.','err');
+    }
+  }, 15000);
+  peer.on('open', ()=>{
+    if (NET.peer!==peer) return;
+    stage = 2;
+    netStatus('join-status','① Signaling ✓ → ② Contacting room '+code+'…');
+    const conn = peer.connect(NET_PREFIX+code, {reliable:true});
+    NET.hostConn = conn;
+    conn.on('open', ()=>{ settled = true; conn.send({t:'hello', name}); netStatus('join-status','② Linked ✓ → ③ Connected! Waiting in lobby…','ok'); });
+    conn.on('data', d=>netClientData(d));
+    conn.on('close', ()=>{ settled = true; netStatus('join-status','Disconnected from host.','err'); document.getElementById('online-wait-screen').classList.remove('open'); });
+  });
+  peer.on('error', e=>{
+    settled = true;
+    if (NET.peer!==peer) return;
+    if (e.type==='peer-unavailable') netStatus('join-status','Room not found — check the code with your host (rooms expire if the host closes or refreshes their page).','err');
+    else netStatus('join-status','Network error: '+e.type,'err');
+  });
+}
+function netClientData(d){
+  if (!d || typeof d!=='object') return;
+  if (d.t==='lobby'){
+    const el=document.getElementById('join-lobby-list'); if(!el) return;
+    let html = `<div class="net-lobby-row"><span class="seat-num">1</span><span class="who">${netEsc(d.hostName)}</span><span class="tag">👑 Host</span></div>`;
+    (d.seats||[]).forEach((nm,i)=>{
+      const me = nm!==null && nm===NET.myName;
+      html += nm!==null
+        ? `<div class="net-lobby-row${me?' me':''}"><span class="seat-num">${i+2}</span><span class="who">${netEsc(nm)}${me?' (you)':''}</span><span class="tag">👤 Seated</span></div>`
+        : `<div class="net-lobby-row open-seat"><span class="seat-num">${i+2}</span><span class="who">Open seat</span><span class="tag">🤖 AI if empty</span></div>`;
+    });
+    (d.unseated||[]).forEach(nm=>{
+      const me = nm===NET.myName;
+      html += `<div class="net-lobby-row${me?' me':''} open-seat"><span class="seat-num">—</span><span class="who">${netEsc(nm)}${me?' (you)':''}</span><span class="tag">No seat yet</span></div>`;
+    });
+    el.innerHTML = html;
+    if (d.started) netStatus('join-status','Game in progress — you\'ll join the next one.','ok');
+  }
+  else if (d.t==='start'){ document.getElementById('online-wait-screen').classList.add('open'); }
+  else if (d.t==='state'){
+    const prevG = (NET.mode==='join') ? G : null;
+    G = netUnpack(d.g);
+    NET.mySeat = d.seat;
+    const myTurn = G.currentSeat === NET.mySeat;
+    // Purely client-local UI state (which cards are tapped, mid-layoff/displace targeting
+    // mode and its highlighted meld targets) isn't tracked by the host on our behalf —
+    // re-resolve it against the fresh card objects so it survives the next heartbeat,
+    // but only while it's still our turn.
+    if (prevG && myTurn) {
+      const myHand = (G.players.find(p=>p.seat===NET.mySeat)||{}).hand || [];
+      const reResolve = ids => myHand.filter(c=>ids.includes(c.id));
+      // selectedCards is the one exception: while displaceMode is active, the host's
+      // broadcast carries the authoritative force-selected Joker, which must win over
+      // whatever we had selected locally before sending the displace intent.
+      if (!G.displaceMode) {
+        G.selectedCards = reResolve((prevG.selectedCards||[]).map(c=>c.id));
+      }
+      // Layoff/displace navigation state is always purely local — the host never sets
+      // this meaningfully for a remote seat, so always preserve it regardless of
+      // displaceMode (which stays true throughout the whole "pick a target meld" step).
+      G.layoffSelectMode = !!prevG.layoffSelectMode;
+      G.layoffTargets = prevG.layoffTargets || [];
+      G.displaceSelectMode = !!prevG.displaceSelectMode;
+      G.displaceReplacementCard = prevG.displaceReplacementCard ? (reResolve([prevG.displaceReplacementCard.id])[0]||null) : null;
+    }
+    if (!NET.inGame){
+      NET.inGame = true;
+      document.getElementById('online-wait-screen').classList.remove('open');
+      document.body.classList.add('net-client');
+      NET._lastScreenSeen = null;
+      showScreen('game-screen');
+    }
+    document.body.classList.toggle('net-myturn', myTurn);
+    const banner = document.getElementById('net-spectate-banner');
+    if (banner) banner.textContent = myTurn ? '🎴 YOUR TURN — draw, meld, lay off, displace, or discard' : '👁 Watching live — AI is playing for you';
+    try{ renderAll(); }catch(e){ console.error('client render error:', e); }
+    if (myTurn) {
+      const cp = currentPlayer();
+      if (cp.isHuman && !cp.hasBid && G.phase==='act' && cp.tableau.length===0) showBidPrompt(cp);
+    }
+    netApplyUI(d.ui);
+  }
+  else if (d.t==='reject'){
+    setStatus('✕ '+(d.msg||'Move rejected.'));
+  }
+}
+function netLeaveWait(){
+  document.getElementById('online-wait-screen').classList.remove('open');
+  netTeardown(); NET.mode='join';
+  netStatus('join-status','Left the room.');
+}
+/* ══════════ END ONLINE MULTIPLAYER PHASE 1 ══════════ */
+/* Phase 1 boundary: remote seats are placeholder-AI until Phase 2 gameplay sync (state broadcast, hand masking, real input) lands. */
+
+/* ══════════ ONLINE MULTIPLAYER — PHASE 2a (State Mirror / Spectator) ══════════ */
+function netPack(v){
+  if (v instanceof Set) return {__set:[...v].map(netPack)};
+  if (Array.isArray(v)) return v.map(netPack);
+  if (typeof v === 'function') return null;
+  if (v && typeof v === 'object'){ const o={}; for (const k in v){ const x=v[k]; if (typeof x!=='function') o[k]=netPack(x); } return o; }
+  return v;
+}
+function netUnpack(v){
+  if (v && typeof v === 'object'){
+    if (v.__set) return new Set(v.__set.map(netUnpack));
+    if (Array.isArray(v)) return v.map(netUnpack);
+    const o={}; for (const k in v) o[k]=netUnpack(v[k]); return o;
+  }
+  return v;
+}
+function netMaskCard(seat,i){
+  return { id:'m'+seat+'_'+i, masked:true, suit:'Hidden', rank:0, subtype:null, role:null,
+    isJoker:false, displayRank:'?', stripRank:'?', vpLabel:'', vpSymbol:'', sortKey:9000+i };
+}
+function netSerializeG(forSeat){
+  const out = {};
+  for (const k in G){
+    if (typeof G[k] === 'function') continue;
+    out[k] = netPack(G[k]);
+  }
+  // Hidden information: only the recipient's own hand is unmasked; everyone else's hand is masked (count preserved)
+  out.players = G.players.map(p => {
+    const packed = netPack(p);
+    if (p.seat !== forSeat) packed.hand = p.hand.map((_,i)=>netMaskCard(p.seat,i));
+    return packed;
+  });
+  // Normally the host's own selectedCards is just local UI clutter, not meaningful to a
+  // remote viewer. EXCEPTION: after a displace, selectedCards holds the force-selected
+  // Joker the current player is required to use — that's authoritative game state, and
+  // must reach the seat it belongs to, or their client has no way to know it's selected.
+  out.selectedCards = (G.displaceMode && forSeat === G.currentSeat) ? netPack(G.selectedCards) : [];
+  return out;
+}
+function netScheduleState(){
+  if (NET.mode!=='host' || !NET.started) return;
+  clearTimeout(NET._stateTimer);
+  NET._stateTimer = setTimeout(netSendStates, 120);
+}
+function netCollectLog(){
+  const el = document.getElementById('game-log'); if (!el) return [];
+  const out = [], kids = el.children;
+  for (let i=0; i<Math.min(kids.length, 60); i++) out.push(kids[i].outerHTML);
+  return out;
+}
+function netCollectUI(){
+  return { log: netCollectLog(), screen: NET.lastScreenId };
+}
+function netSendStates(){
+  if (NET.mode!=='host' || !NET.started || !G || !G.nPlayers) return;
+  const ui = netCollectUI();
+  for (const seatStr of Object.keys(NET.remoteSeats)){
+    const seat = +seatStr, conn = NET.remoteSeats[seatStr];
+    if (!conn || !conn.open) continue;
+    try{ conn.send({t:'state', seat, g: netSerializeG(seat), ui}); }catch(e){}
+  }
+}
+function netApplyUI(ui){
+  if (!ui) return;
+  if (ui.log){
+    const joined = ui.log.join('');
+    if (joined !== NET._lastLog){
+      NET._lastLog = joined;
+      const la = document.getElementById('game-log');
+      if (la) la.innerHTML = joined;
+    }
+  }
+  if (ui.screen && ui.screen !== NET._lastScreenSeen){
+    NET._lastScreenSeen = ui.screen;
+    if (ui.screen === 'score-screen') showScoreScreen(G.players.map(p=>p.handScore||{}));
+    else if (ui.screen === 'win-screen') showWinScreen(G.players.filter(p=>p.totalVP>=G.targetVP));
+    else showScreen('game-screen');
+  }
+}
+/* ══════════ END ONLINE MULTIPLAYER PHASE 2a ══════════ */
+
+/* ══════════ ONLINE MULTIPLAYER — PHASE 2b (Remote Play) ══════════ */
+function netIsRemoteControlled(seat){
+  return NET.mode==='host' && NET.started && !!NET.remoteSeats[seat];
+}
+function netSendReject(seat, msg){
+  glog(`✕ ${netEsc(msg)} (rejected for a remote player)`, 'bad');
+  const conn = NET.remoteSeats[seat];
+  if (conn && conn.open){ try{ conn.send({t:'reject', msg}); }catch(e){} }
+}
+// Runs fn() on the host, capturing any setStatus() calls (which would otherwise
+// write to the HOST's own screen) and redirecting them to the remote seat as a rejection.
+function netExecuteAsSeat(seat, fn){
+  const realSetStatus = setStatus;
+  const captured = [];
+  setStatus = (msg)=>{ if (msg) captured.push(msg); };
+  try{ fn(); }
+  catch(e){ console.error('netApplyIntent error:', e); captured.push('Move failed on the host — try again.'); }
+  finally{ setStatus = realSetStatus; }
+  if (captured.length) netSendReject(seat, captured.join(' '));
+}
+function netApplyIntent(seat, d){
+  if (!NET.started || !G || !G.nPlayers) return;
+  if (G.currentSeat !== seat){ netSendReject(seat, 'Not your turn.'); return; }
+  const player = G.players.find(p=>p.seat===seat);
+  if (!player){ netSendReject(seat, 'Seat not found.'); return; }
+  if (d.action==='bid'){
+    if (player.hasBid){ netSendReject(seat, "You've already bid this hand."); return; }
+    const bid = (d.bid==='laoda'||d.bid==='pinyin') ? d.bid : null;
+    netExecuteAsSeat(seat, ()=>humanBid(bid));
+  }
+  else if (d.action==='drawDeck'){
+    netExecuteAsSeat(seat, ()=>humanDrawDeck());
+  }
+  else if (d.action==='pickup'){
+    const idx = Number.isInteger(d.discardIndex) ? d.discardIndex : -1;
+    if (idx<0 || idx>=G.discardPile.length){ netSendReject(seat, 'Invalid discard pile selection.'); return; }
+    netExecuteAsSeat(seat, ()=>pickFromDiscard(idx));
+  }
+  else if (d.action==='undoDiscard'){
+    netExecuteAsSeat(seat, ()=>humanUndoDiscard());
+  }
+  else if (d.action==='meld'){
+    const ids = Array.isArray(d.cardIds) ? d.cardIds : [];
+    G.selectedCards = player.hand.filter(c=>ids.includes(c.id));
+    netExecuteAsSeat(seat, ()=>humanMeld());
+  }
+  else if (d.action==='discard'){
+    const card = player.hand.find(c=>c.id===d.cardId);
+    G.selectedCards = card ? [card] : [];
+    netExecuteAsSeat(seat, ()=>humanDiscard());
+  }
+  else if (d.action==='layoff'){
+    const ids = Array.isArray(d.cardIds) ? d.cardIds : [];
+    if (!Number.isInteger(d.seat) || !Number.isInteger(d.mi)){ netSendReject(seat, 'Invalid layoff target.'); return; }
+    G.selectedCards = player.hand.filter(c=>ids.includes(c.id));
+    netExecuteAsSeat(seat, ()=>doLayoff(d.seat, d.mi));
+  }
+  else if (d.action==='displace'){
+    if (!Number.isInteger(d.seat) || !Number.isInteger(d.mi)){ netSendReject(seat, 'Invalid displace target.'); return; }
+    const card = player.hand.find(c=>c.id===d.cardId);
+    if (!card){ netSendReject(seat, 'Replacement card not found in hand.'); return; }
+    G.selectedCards = [card];
+    G.displaceReplacementCard = card;
+    netExecuteAsSeat(seat, ()=>doDisplace(d.seat, d.mi));
+  }
+  else { netSendReject(seat, 'Unknown action.'); }
+}
+/* ── CLIENT SIDE ── */
+function netSendIntent(action, payload){
+  if (!NET.hostConn || !NET.hostConn.open) return;
+  try{ NET.hostConn.send(Object.assign({t:'intent', action}, payload||{})); }catch(e){}
+}
+/* ══════════ END ONLINE MULTIPLAYER PHASE 2b ══════════ */
+
+function startGame() {
+  const nPlayers = setupNP;
+  const targetVP = setupVP;
+  
+  G = {
+    nPlayers,
+    targetVP,
+    handNum: 0,
+    players: [],
+    deck: [],
+    discardPile: [],
+    currentSeat: 0,
+    phase: 'draw',
+    humanSeat: 0,
+    selectedCards: [],
+    displaceMode: false,
+    displaceJoker: null,
+    displaceFromMeld: null,
+    layoffTargetMeld: null,
+    displaceSelectMode: false,
+    displaceReplacementCard: null,
+    layoffSelectMode: false,
+    layoffTargets: [],
+    mustUseCardId: null,
+    discardPickSnapshot: null,
+    outSeat: undefined,
+    outIsGin: false,
+  };
+  
+  // Create players from setup config
+  if (NET.mode === 'host') {
+    // Online host: seat 0 = host; joined friends occupy seats 1+ in join order.
+    // Phase 2b: remote seats with a real connection are genuinely human-controlled;
+    // open/unfilled seats remain AI.
+    const hostName = document.getElementById('host-name-input')?.value.trim() || 'Host';
+    for(let i=0;i<nPlayers;i++) {
+      const j = i===0 ? null : NET.seatAssign[i];
+      const isHuman = i===0 || !!j;
+      const name = i===0 ? hostName : (j ? j.name : AI_DEFAULTS[i-1]);
+      G.players.push({
+        playerId: i,
+        seat: i,
+        name,
+        isHuman,
+        hand:[], tableau:[], totalVP:0, team:1, isSolo:false
+      });
+    }
+    NET.started = true;
+    NET.remoteSeats = {};
+    for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.remoteSeats[i] = NET.seatAssign[i].conn;
+    NET.startSeats = {};
+    for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.startSeats[i] = NET.seatAssign[i].name;
+    netBroadcast({t:'start'});
+    if (NET.stateInterval) clearInterval(NET.stateInterval);
+    NET.stateInterval = setInterval(netSendStates, 2000); // safety net for any state change that skips renderAll()
+  } else {
+    for(let i=0;i<nPlayers;i++) {
+      const cfg = setupPlayers[i];
+      const isHuman = i===0 ? true : (cfg.isHuman && cfg.name.trim().length > 0);
+      const name = cfg.name.trim() || (i===0 ? 'You' : AI_DEFAULTS[i-1]);
+      G.players.push({
+        playerId: i, // stable identity — never reassigned; seat/team/isSolo change each hand
+        seat: i,
+        name,
+        isHuman,
+        hand:[], tableau:[], totalVP:0, team:1, isSolo:false
+      });
+    }
+  }
+  
+  showScreen('game-screen');
+  dealNewHand(true);
+}
+
+function dealNewHand(firstHand) {
+  G.handNum++;
+  G.deck = buildDeck(G.nPlayers);
+  G.discardPile = [];
+  G.selectedCards = [];
+  G.displaceMode = false;
+  G.displaceJoker = null;
+  G.displaceFromMeld = null;
+  G.layoffTargetMeld = null;
+  G.displaceSelectMode = false;
+  G.displaceReplacementCard = null;
+  G.layoffSelectMode = false;
+  G.layoffTargets = [];
+  
+  // Clear hands, tableaux, and per-hand flags
+  G.players.forEach(p => { p.hand=[]; p.tableau=[]; p.hadTurnThisHand=false; p.hadMoreThanOneTurn=false; p.ginEligible=false; p.goOutPosition=null; p.goOutIsGin=false; p.bid=null; p.hasBid=false; });
+  
+  // Deal 13 cards each
+  for(let i=0;i<13;i++) {
+    G.players.forEach(p => { if(G.deck.length) p.hand.push(G.deck.pop()); });
+  }
+  
+  // First discard
+  if(G.deck.length) G.discardPile.push(G.deck.pop());
+  
+  // Determine starting player
+  if(firstHand) {
+    // Random human player starts (just pick seat 0 = human for simplicity,
+    // but actually pick random)
+    G.currentSeat = 0; // human always first hand for clarity
+    // Assign initial teams evenly (no solos until VP history exists, hand 2+)
+    const n = G.nPlayers;
+    G.players.forEach((p,i) => { p.team = i % 2 === 0 ? 1 : 2; p.isSolo = false; });
+  } else {
+    // Lowest VP goes first
+    const sorted = [...G.players].sort((a,b)=>a.totalVP-b.totalVP);
+    G.currentSeat = sorted[0].seat;
+    // Re-assign teams based on VP
+    assignTeams(G.players);
+  }
+  
+  G.phase = 'draw';
+  G.outSeat = undefined;
+  G.outIsGin = false;
+  G.mustUseCardId = null;
+  G.discardPickSnapshot = null;
+  currentPlayer().ginEligible = true;
+  glog('--- Hand '+G.handNum+' begins ---','imp');
+  renderAll();
+
+  if(currentPlayer().isHuman) {
+    if (netIsRemoteControlled(currentPlayer().seat)) {
+      renderAll(); // just wait for their network intent — no local handoff/AI
+    } else {
+      showHandoff(currentPlayer());
+    }
+  } else {
+    setTimeout(()=>aiTakeTurn(), 600);
+  }
+}
+
+function currentPlayer() { return (G.players||[]).find(p=>p.seat===G.currentSeat)||{isHuman:false,hand:[],tableau:[],seat:0,totalVP:0,team:1,isSolo:false,ginEligible:false}; }
+
+// ══════════════════════════════════════════════
+// TURN FLOW
+// ══════════════════════════════════════════════
+function advanceTurn() {
+  // Mark the player who just finished as having had their turn this hand
+  const justFinished = G.players.find(p=>p.seat===G.currentSeat);
+  if(justFinished && !justFinished.goOutPosition) {
+    // Only update hadMoreThanOneTurn if they haven't gone out
+    if(justFinished.hadTurnThisHand) justFinished.hadMoreThanOneTurn = true;
+    justFinished.hadTurnThisHand = true;
+  }
+
+  // Check if hand should end: enough outs AND all players have had at least 1 turn
+  const totalOuts = G.players.filter(p=>p.goOutPosition).length;
+  const stillWaiting = G.players.filter(p=>!p.hadTurnThisHand);
+  if(totalOuts >= outsNeeded() && stillWaiting.length === 0) {
+    checkHandEnd();
+    return;
+  }
+
+  G.currentSeat = (G.currentSeat + 1) % G.nPlayers;
+
+  // Skip players who have already gone out
+  let skipCount = 0;
+  while(G.players.find(p=>p.seat===G.currentSeat)?.goOutPosition && skipCount < G.nPlayers) {
+    G.currentSeat = (G.currentSeat + 1) % G.nPlayers;
+    skipCount++;
+  }
+  if(skipCount >= G.nPlayers) { checkHandEnd(); return; }
+
+  // If hand is in end phase (enough outs), skip players who've had their turn
+  if(totalOuts >= outsNeeded()) {
+    let safetyCount = 0;
+    while(G.players.find(p=>p.seat===G.currentSeat)?.hadTurnThisHand && safetyCount < G.nPlayers) {
+      G.currentSeat = (G.currentSeat + 1) % G.nPlayers;
+      safetyCount++;
+    }
+    if(safetyCount >= G.nPlayers) {
+      checkHandEnd();
+      return;
+    }
+  }
+
+  G.phase = 'draw';
+  G.selectedCards = [];
+  G.displaceMode = false;
+  G.displaceJoker = null;
+  G.displaceFromMeld = null;
+  G.layoffTargetMeld = null;
+  G.mustUseCardId = null;
+  G.displaceSelectMode = false;
+  G.displaceReplacementCard = null;
+  G.layoffSelectMode = false;
+  G.layoffTargets = [];
+  // Safety: always clear displaceMode at turn start
+  const cp = currentPlayer();
+  if(G.displaceMode && G.displaceJoker && !cp.hand.find(c=>c.id===G.displaceJoker.id)) {
+    G.displaceMode = false;
+    G.displaceJoker = null;
+  }
+  cp.ginEligible = (cp.tableau.length === 0);
+  renderAll();
+
+  if(currentPlayer().isHuman) {
+    if (netIsRemoteControlled(currentPlayer().seat)) {
+      // just wait for their network intent — already rendered above
+    } else {
+      showHandoff(currentPlayer());
+    }
+  } else {
+    setTimeout(()=>aiTakeTurn(), 400);
+  }
+}
+
+// How many players need to go out before hand ends
+function outsNeeded() {
+  const n = G.nPlayers;
+  if(n <= 2) return 1;
+  if(n === 3) return 2;
+  return 3;
+}
+
+// Signal that a player has gone out
+function triggerGoOut(outPlayerSeat, isGin) {
+  const outPlayer = G.players.find(p=>p.seat===outPlayerSeat);
+  if(!outPlayer) return;
+
+  outPlayer.hadTurnThisHand = true;
+  outPlayer.goOutIsGin = isGin;
+
+  // Determine go-out position
+  // All players going out on their first play = position 1 (Laoda)
+  // After that, sequential positions
+  const currentOutCount = G.players.filter(p=>p.goOutPosition).length;
+  const firstPlayOutCount = G.players.filter(p=>p.goOutPosition === 1).length;
+
+  // If this is the player's first play (hadTurnThisHand just set), check if others also went out first play
+  let position;
+  if(!outPlayer.hadMoreThanOneTurn) {
+    // First play of the hand — always Laoda (position 1)
+    position = 1;
+  } else {
+    // Subsequent play — next position after highest already assigned
+    const usedPositions = G.players.filter(p=>p.goOutPosition).map(p=>p.goOutPosition);
+    const maxPos = usedPositions.length ? Math.max(...usedPositions) : 0;
+    position = maxPos + 1;
+  }
+  outPlayer.goOutPosition = position;
+
+  const posNames = {1:'Laoda (1st)', 2:'Pinyin (2nd)', 3:'3rd'};
+  glog(outPlayer.name+' goes out'+(isGin?' (GIN!)':'!')+' — '+posNames[position], 'imp');
+
+  G.outSeat = outPlayerSeat;
+  G.outIsGin = isGin;
+
+  // Count total outs so far
+  const totalOuts = G.players.filter(p=>p.goOutPosition).length;
+  const needed = outsNeeded();
+
+  // Check if enough players have gone out AND all players have had at least 1 turn
+  const stillWaiting = G.players.filter(p=>!p.hadTurnThisHand);
+
+  if(totalOuts >= needed && stillWaiting.length === 0) {
+    checkHandEnd();
+    return;
+  }
+
+  if(totalOuts >= needed) {
+    // Enough outs but some haven't had their first turn
+    const names = stillWaiting.map(p=>p.name).join(', ');
+    setStatus(outPlayer.name+' went out! '+names+' still need their first turn.');
+    glog(names+' still need their first turn this hand.', 'info');
+  } else {
+    const remaining = needed - totalOuts;
+    setStatus(outPlayer.name+' went out! Need '+remaining+' more out'+(remaining>1?'s':'')+' to end the hand.');
+    glog('Hand continues — '+remaining+' more player'+(remaining>1?'s':'')+' need to go out.', 'info');
+  }
+
+  advanceTurn();
+}
+
+// Check end condition
+function checkHandEnd() {
+  const outsInfo = G.players.filter(p=>p.goOutPosition).map(p=>p.name+' ('+p.goOutPosition+')').join(', ');
+  glog('--- Hand ends. Outs: '+outsInfo+' ---','imp');
+  const scores = scoreHand(G.players);
+  scores.forEach(s => {
+    G.players[s.idx].totalVP += s.total;
+    G.players[s.idx].handScore = s;
+  });
+  showScoreScreen(scores);
+}
+
+// ══════════════════════════════════════════════
+// BIDDING SYSTEM
+// ══════════════════════════════════════════════
+function shouldShowBid(player) {
+  return !player.hasBid; // only on first turn before any action
+}
+
+function showBidPrompt(player) {
+  const bar = document.getElementById('bid-bar');
+  if(!bar) return;
+
+  // In 2P Pinyin is now available — never hide it
+  const pinyinBtn = bar.querySelector('.bid-btn.pinyin');
+
+  // Update hint text
+  const laodaBtn = bar.querySelector('.bid-btn.laoda');
+  if(laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 team fail</span>';
+  if(pinyinBtn) pinyinBtn.innerHTML = 'PINYIN<span class="bid-hint">+25 team if any out / −25 team fail</span>';
+
+  // Find teammates who have already bid
+  const teammates = G.players.filter(p=>p.team===player.team && p.seat!==player.seat && p.hasBid);
+  let teamInfo = '';
+  if(teammates.length > 0) {
+    const lines = teammates.map(t => {
+      const bidStr = t.bid ? t.bid.toUpperCase() : 'PASS';
+      return `<b>${t.name}</b>: ${bidStr}`;
+    }).join(' &nbsp;|&nbsp; ');
+    teamInfo = `<div style="font-size:0.65rem;color:var(--text2);margin-bottom:6px;padding:4px 8px;background:var(--bg3);border-radius:6px;">
+      Teammates: ${lines}
+    </div>`;
+
+    // Check if any teammate has declared Laoda or Pinyin — add subsequent declarer note
+    const laodaFirst = teammates.some(t=>t.bid==='laoda');
+    const pinyinFirst = teammates.some(t=>t.bid==='pinyin');
+    if(laodaFirst && laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 YOU ONLY fail</span>';
+    if(pinyinFirst && pinyinBtn) pinyinBtn.innerHTML = 'PINYIN<span class="bid-hint">+25 team if any out / −25 YOU ONLY fail</span>';
+  }
+
+  // Inject teammate info above bid buttons
+  const inner = document.getElementById('bid-bar-inner');
+  if(inner) {
+    let infoDiv = document.getElementById('bid-teammate-info');
+    if(!infoDiv) {
+      infoDiv = document.createElement('div');
+      infoDiv.id = 'bid-teammate-info';
+      inner.insertBefore(infoDiv, inner.firstChild);
+    }
+    infoDiv.innerHTML = teamInfo;
+  }
+
+  bar.style.display = 'block';
+}
+
+function humanBid(bid) {
+  if (NET.mode==='join') { netSendIntent('bid', {bid}); return; }
+  const player = currentPlayer();
+  player.bid = bid;
+  player.hasBid = true;
+  const bar = document.getElementById('bid-bar');
+  if(bar) bar.style.display = 'none';
+  if(bid) glog(player.name+' declares '+bid.toUpperCase()+'!','imp');
+  else glog(player.name+' passes on bidding.','info');
+  // Don't call renderAll() — just update buttons and hide bar to preserve hand selection state
+  updateActionButtons();
+  renderScoreBar();
+}
+
+function aiBid(player) {
+  // Strategic: count potential melds in hand
+  player.hasBid = true;
+  const hand = player.hand;
+  // Count star/arrow cards and potential sets as hand quality proxy
+  const goodCards = hand.filter(c=>c.isStar||c.isArrow||c.isTopDog).length;
+  const r = Math.random();
+  if(goodCards >= 6 && r < 0.3) {
+    player.bid = 'laoda';
+    glog(player.name+' declares LAODA!','imp');
+  } else if(goodCards >= 4 && r < 0.5) {
+    player.bid = 'pinyin';
+    glog(player.name+' declares PINYIN!','info');
+  } else {
+    player.bid = null;
+  }
+}
+
+// Call after draw on first turn
+function checkAndShowBid() {
+  const player = currentPlayer();
+  if(player.hasBid) return;
+  // Cannot bid if already has melds on the board
+  if(player.tableau.length > 0) {
+    player.hasBid = true;
+    player.bid = null;
+    const bar = document.getElementById('bid-bar');
+    if(bar) bar.style.display = 'none';
+    return;
+  }
+  if(player.isHuman && !netIsRemoteControlled(player.seat)) {
+    showBidPrompt(player);
+  } else if(!player.isHuman) {
+    aiBid(player);
+  }
+  // else: remote-controlled human — the client prompts itself locally on state receipt
+}
+
+// ══════════════════════════════════════════════
+// HUMAN ACTIONS
+// ══════════════════════════════════════════════
+function humanDrawDeck() {
+  if (NET.mode==='join') { netSendIntent('drawDeck', {}); return; }
+  if(G.phase !== 'draw') return setStatus('Not your draw phase.');
+  if(!currentPlayer().isHuman) return;
+  if(G.deck.length === 0) {
+    glog('Deck exhausted — hand ends!','imp');
+    checkHandEnd();
+    return;
+  }
+  G.displaceSelectMode = false;
+  
+  const card = G.deck.pop();
+  currentPlayer().hand.push(card);
+  glog('You draw from the deck.','info');
+  G.phase = 'act';
+  G.selectedCards = [];
+  renderAll();
+  checkAndShowBid();
+}
+
+function humanDrawDiscard() {
+  // Now handled by clicking a discard card directly — this is a fallback for the top card
+  if(G.phase !== 'draw') return setStatus('Not your draw phase.');
+  if(!currentPlayer().isHuman) return;
+  if(G.discardPile.length === 0) return setStatus('Discard pile is empty!');
+  pickFromDiscard(G.discardPile.length - 1);
+}
+
+// Pick a card from discard pile by index (0 = oldest, length-1 = top)
+// Takes that card + all cards above it into hand; chosen card must be used this turn
+function pickFromDiscard(cardIdx) {
+  if (NET.mode==='join') { netSendIntent('pickup', {discardIndex:cardIdx}); return; }
+  if(G.phase !== 'draw') return setStatus('Not your draw phase.');
+  if(!currentPlayer().isHuman) return;
+  const player = currentPlayer();
+
+  // Snapshot for undo
+  G.discardPickSnapshot = {
+    discardPile: [...G.discardPile],
+    handIds: player.hand.map(c=>c.id),
+    takenCards: G.discardPile.slice(cardIdx),
+  };
+
+  const taken = G.discardPile.splice(cardIdx);
+  const mustUseCard = taken[0];
+  taken.forEach(c => player.hand.push(c));
+  G.mustUseCardId = mustUseCard.id;
+  glog('You pick up '+mustUseCard.name+' from discard'+(taken.length>1?' (+ '+(taken.length-1)+' above it)':'')+'.',  'info');
+  if(taken.length > 1) glog('Extra cards: '+taken.slice(1).map(c=>c.name).join(', ')+'.','info');
+  G.phase = 'act';
+  G.selectedCards = [mustUseCard];
+  setStatus('You must use '+mustUseCard.name+' in a meld, layoff, or displace this turn!');
+  renderAll();
+  checkAndShowBid();
+}
+
+function humanUndoDiscard() {
+  if (NET.mode==='join') { netSendIntent('undoDiscard', {}); return; }
+  if(!G.discardPickSnapshot) return;
+  const player = currentPlayer();
+  const snap = G.discardPickSnapshot;
+
+  // Remove the taken cards from hand (restore hand to pre-pick state)
+  snap.takenCards.forEach(taken => {
+    const idx = player.hand.findIndex(c=>c.id===taken.id);
+    if(idx>=0) player.hand.splice(idx,1);
+  });
+
+  // Restore discard pile
+  G.discardPile = snap.discardPile;
+  G.mustUseCardId = null;
+  G.discardPickSnapshot = null;
+  G.phase = 'draw';
+  G.selectedCards = [];
+  glog('Draw from discard undone.','info');
+  setStatus('');
+  renderAll();
+}
+
+function humanMeld() {
+  if (NET.mode==='join') { netSendIntent('meld', {cardIds:G.selectedCards.map(c=>c.id)}); G.selectedCards=[]; renderHumanHand(); updateActionButtons(); return; }
+  if(G.phase !== 'act') return setStatus('Draw a card first.');
+  const sel = G.selectedCards;
+  if(sel.length < 3) return setStatus('Select 3+ cards to meld.');
+
+  const result = validateMeld(sel);
+  if(!result.valid) return setStatus('Invalid meld: '+result.reason);
+
+  const player = currentPlayer();
+
+  // If must-use card from discard, verify it's included
+  if(G.mustUseCardId) {
+    const included = sel.some(c=>c.id===G.mustUseCardId);
+    if(!included) return setStatus('You must use the picked discard card in this meld!');
+  }
+  // Displaced Joker must be used before anything else can be played
+  if(G.displaceMode && G.displaceJoker && !sel.some(c=>c.id===G.displaceJoker.id)) {
+    return setStatus('⚠️ You must use the displaced Joker first!');
+  }
+
+  // Remove from hand
+  sel.forEach(c => { const idx=player.hand.findIndex(h=>h.id===c.id); if(idx>=0) player.hand.splice(idx,1); });
+
+  const meld = { cards:[...sel], type:result.type, ownerIdx:player.seat, isComplete:result.isComplete||false };
+
+  const hasTD = sel.some(c=>c.isTopDog);
+  if(hasTD) transferMeldOwnership(meld);
+  sortSFMeld(meld);
+  G.players.find(p=>p.seat===meld.ownerIdx).tableau.push(meld);
+  awardStarVP(sel, player);
+  awardCompletionBonus(meld, false);
+
+  glog('You meld: '+sel.map(c=>c.displayRank).join(', ')+' ['+result.type+']','good');
+  G.selectedCards = [];
+  G.mustUseCardId = null;
+  G.discardPickSnapshot = null;
+  if(G.displaceMode && G.displaceJoker && sel.some(c=>c.id===G.displaceJoker.id)) {
+    G.displaceMode = false;
+    G.displaceJoker = null;
+  }
+
+  if(player.hand.length === 0) {
+    if(player.ginEligible) {
+      triggerGoOut(player.seat, true);
+      return;
+    }
+    // Had melds at turn start — must discard to go out, draw 3 instead
+    glog('Hand empty via meld — drawing 3 cards.','info');
+    for(let i=0;i<3;i++) { if(G.deck.length) player.hand.push(G.deck.pop()); }
+    glog('You drew 3 cards. Turn ends.','info');
+    renderAll();
+    advanceTurn();
+    return;
+  }
+
+  renderAll();
+}
+
+// Check if ALL selected cards can be added sequentially to a meld
+function canLayoffAll(cards, meld) {
+  if(meld.cards.length + cards.length > 6) return false;
+  let testCards = [...meld.cards];
+  for(const card of cards) {
+    testCards.push(card);
+    if(!validateMeld(testCards).valid) return false;
+  }
+  return true;
+}
+
+function humanLayoff() {
+  if(G.phase !== 'act') return setStatus('Draw a card first.');
+
+  // Cancel if already in layoff-select mode
+  if(G.layoffSelectMode) {
+    G.layoffSelectMode = false;
+    renderAll();
+    setStatus('');
+    return;
+  }
+
+  const sel = G.selectedCards;
+  if(sel.length === 0) return setStatus('Select card(s) to lay off.');
+
+  // Must-use card check
+  if(G.mustUseCardId) {
+    const mustCard = currentPlayer().hand.find(c=>c.id===G.mustUseCardId);
+    if(mustCard && !sel.some(c=>c.id===G.mustUseCardId))
+      return setStatus('You must include the picked discard card!');
+  }
+
+  // Find all melds that can accept ALL selected cards
+  const validTargets = [];
+  G.players.forEach(p => {
+    p.tableau.forEach((meld, mi) => {
+      if(canLayoffAll(sel, meld)) {
+        validTargets.push({seat:p.seat, mi});
+      }
+    });
+  });
+
+  if(validTargets.length === 0) {
+    // Blink the button and deselect
+    const btn = document.getElementById('btn-layoff');
+    if(btn) { btn.classList.add('blink'); setTimeout(()=>btn.classList.remove('blink'), 1200); }
+    G.selectedCards = [];
+    renderHumanHand();
+    updateActionButtons();
+    setStatus('No valid meld can accept those cards.');
+    return;
+  }
+
+  G.layoffSelectMode = true;
+  G.layoffTargets = validTargets;
+  setStatus('Click a highlighted meld to lay off your cards.');
+  renderAll();
+}
+
+function doLayoff(seat, mi) {
+  if (NET.mode==='join') {
+    netSendIntent('layoff', {cardIds:G.selectedCards.map(c=>c.id), seat, mi});
+    G.layoffSelectMode=false; G.selectedCards=[]; G.layoffTargets=[];
+    renderAll();
+    return;
+  }
+  G.layoffSelectMode = false;
+  const player = currentPlayer();
+  const sel = [...G.selectedCards];
+  if(sel.length === 0) return setStatus('No cards selected.');
+
+  const targetPlayer = G.players.find(p=>p.seat===seat);
+  if(!targetPlayer) return;
+  const meld = targetPlayer.tableau[mi];
+  if(!meld) return setStatus('Meld not found.');
+
+  // Must-use card checks (discard-pickup lock and displaced-Joker lock)
+  if(G.mustUseCardId && !sel.some(c=>c.id===G.mustUseCardId)) {
+    return setStatus('You must use the picked discard card first!');
+  }
+  if(G.displaceMode && G.displaceJoker && !sel.some(c=>c.id===G.displaceJoker.id)) {
+    return setStatus('⚠️ You must use the displaced Joker first!');
+  }
+
+  // Final validation
+  if(!canLayoffAll(sel, meld)) return setStatus('Invalid layoff.');
+
+  // Remove all selected cards from hand and add to meld
+  sel.forEach(card => {
+    const hIdx = player.hand.findIndex(c=>c.id===card.id);
+    if(hIdx >= 0) player.hand.splice(hIdx, 1);
+    meld.cards.push(card);
+  });
+
+  const wasComplete = meld.isComplete;
+  const result = validateMeld(meld.cards);
+  meld.isComplete = result.isComplete || false;
+  sortSFMeld(meld);
+  awardStarVP(sel, player);
+  awardCompletionBonus(meld, wasComplete);
+
+  // Handle Joker ownership transfer if any Joker was laid off
+  const jokerLaid = sel.find(c=>c.isTopDog);
+  if(jokerLaid) {
+    const prevSeat = seat;
+    transferMeldOwnership(meld);
+    if(meld.ownerIdx !== prevSeat) {
+      targetPlayer.tableau.splice(targetPlayer.tableau.indexOf(meld), 1);
+      G.players.find(p=>p.seat===meld.ownerIdx).tableau.push(meld);
+    }
+  }
+
+  // Clear must-use and displace flags if those cards were laid off
+  if(G.mustUseCardId && sel.some(c=>c.id===G.mustUseCardId)) {
+    G.mustUseCardId = null; G.discardPickSnapshot = null;
+  }
+  if(G.displaceMode && G.displaceJoker && sel.some(c=>c.id===G.displaceJoker.id)) {
+    G.displaceMode = false; G.displaceJoker = null;
+  }
+
+  glog('You lay off '+sel.map(c=>c.displayRank).join(', ')+' onto '+targetPlayer.name+"'s meld.", 'info');
+  G.selectedCards = [];
+  G.layoffTargets = [];
+
+  if(player.hand.length === 0) {
+    if(player.ginEligible) { triggerGoOut(player.seat, true); return; }
+    glog('Hand empty via layoff — drawing 3 cards.','info');
+    for(let i=0;i<3;i++) { if(G.deck.length) player.hand.push(G.deck.pop()); }
+    glog('You drew 3 cards. Turn ends.','info');
+    renderAll();
+    advanceTurn();
+    return;
+  }
+
+  renderAll();
+}
+
+// Find all melds where `card` can legally replace the Joker
+function findDisplaceTargets(card) {
+  const targets = [];
+  G.players.forEach(p => {
+    p.tableau.forEach((meld, mi) => {
+      const joker = getMeldJoker(meld);
+      if(!joker) return;
+      // Build test meld: remove Joker, add card, check validity
+      const testCards = [...meld.cards.filter(c=>c.id!==joker.id), card];
+      if(validateMeld(testCards).valid) {
+        targets.push({seat:p.seat, mi, meld, joker, ownerName:p.name});
+      }
+    });
+  });
+  return targets;
+}
+
+function humanDisplace() {
+  if(G.phase !== 'act') return setStatus('Draw a card first.');
+
+  // Cancel if already in displace-select mode
+  if(G.displaceSelectMode) {
+    G.displaceSelectMode = false;
+    G.displaceReplacementCard = null;
+    setStatus('');
+    renderAll();
+    return;
+  }
+
+  // Must have exactly 1 card selected
+  if(G.selectedCards.length !== 1) return setStatus('Select exactly 1 card from your hand to use as a replacement.');
+  const replacementCard = G.selectedCards[0];
+
+  // Find melds where this card can replace a Joker
+  const targets = findDisplaceTargets(replacementCard);
+  if(targets.length === 0) return setStatus(replacementCard.name+' cannot legally replace any Joker on the table. (Check suit conflicts in Sets)');
+
+  G.displaceSelectMode = true;
+  G.displaceReplacementCard = replacementCard;
+  setStatus('Click a highlighted Joker to swap it with '+replacementCard.name+'.');
+  renderAll();
+}
+
+function doDisplace(seat, mi) {
+  if (NET.mode==='join') {
+    netSendIntent('displace', {cardId:G.displaceReplacementCard?.id, seat, mi});
+    G.displaceSelectMode=false; G.displaceReplacementCard=null; G.selectedCards=[];
+    renderAll();
+    return;
+  }
+  G.displaceSelectMode = false;
+
+  // Re-read from G in case reference was lost
+  const replacementCard = G.displaceReplacementCard;
+  G.displaceReplacementCard = null;
+
+  if(!replacementCard) {
+    glog('Displace failed: no replacement card found.','bad');
+    return setStatus('Select a card from your hand first, then click DISPLACE.');
+  }
+
+  const owner = G.players.find(p=>p.seat===seat);
+  if(!owner) return setStatus('Player not found.');
+  const meld = owner.tableau[mi];
+  if(!meld) return setStatus('Meld not found.');
+  const joker = getMeldJoker(meld);
+  if(!joker) return setStatus('No Joker found in that meld.');
+
+  const player = currentPlayer();
+
+  // Verify replacement card is still in player's hand
+  const repIdx = player.hand.findIndex(c=>c.id===replacementCard.id);
+  if(repIdx < 0) {
+    glog('Displace failed: replacement card not in hand.','bad');
+    return setStatus('Replacement card no longer in hand.');
+  }
+
+  // Swap: remove replacement from hand, swap with Joker in meld
+  player.hand.splice(repIdx, 1);
+  const jIdx = meld.cards.findIndex(c=>c.id===joker.id);
+  meld.cards.splice(jIdx, 1, replacementCard);
+
+  sortSFMeld(meld);
+
+  const wasComplete = meld.isComplete;
+  const result = validateMeld(meld.cards);
+  meld.isComplete = result.isComplete || false;
+  awardCompletionBonus(meld, wasComplete);
+
+  // Add Joker to player's hand, force-select it
+  player.hand.push(joker);
+  G.displaceMode = true;
+  G.displaceJoker = joker;
+  G.selectedCards = [joker];
+  G.mustUseCardId = null;
+  G.discardPickSnapshot = null;
+
+  glog('Swapped '+replacementCard.name+' into meld, took '+joker.name+'.','good');
+  setStatus('Use the Joker in a Meld or Lay Off — cannot be deselected.');
+  renderAll();
+}
+
+function humanDiscard() {
+  if (NET.mode==='join') { netSendIntent('discard', {cardId:G.selectedCards[0]?.id}); G.selectedCards=[]; renderHumanHand(); updateActionButtons(); return; }
+  if(G.phase !== 'act') { glog('Discard blocked: phase='+G.phase,'bad'); return setStatus('⚠️ Draw a card first, then discard.'); }
+  const player = currentPlayer();
+
+  if(G.displaceMode) { glog('Discard blocked: displaceMode active','bad'); return setStatus('⚠️ You must use the displaced Joker first!'); }
+
+  if(G.mustUseCardId) {
+    const mustCard = player.hand.find(c=>c.id===G.mustUseCardId);
+    if(mustCard) { glog('Discard blocked: must-use card still in hand: '+mustCard.name,'bad'); return setStatus('⚠️ Must use '+mustCard.name+' in a meld, layoff, or displace first!'); }
+  }
+
+  const sel = G.selectedCards;
+  if(sel.length !== 1) { glog('Discard blocked: '+sel.length+' cards selected','bad'); return setStatus('⚠️ Select exactly 1 card to discard. (Currently '+sel.length+' selected)'); }
+
+  const cardId = sel[0].id;
+  const hIdx = player.hand.findIndex(c=>c.id===cardId);
+  if(hIdx < 0) return setStatus('Card not found in hand.');
+  const card = player.hand[hIdx];
+
+  player.hand.splice(hIdx,1);
+  G.discardPile.push(card);
+  glog('You discard '+card.name+' ('+player.hand.length+' cards left).','info');
+  G.selectedCards = [];
+  G.mustUseCardId = null;
+  G.discardPickSnapshot = null;
+
+  if(player.hand.length === 0) {
+    glog(player.name+' has 0 cards — triggering go out!','imp');
+    triggerGoOut(player.seat, false);
+    return;
+  }
+
+  advanceTurn();
+}
+
+function toggleCardSel(card) {
+  // Cannot deselect the Joker while in displaceMode — but if it's somehow not yet
+  // selected (e.g. a fresh sync just arrived), let this tap select it rather than
+  // dead-ending the player with a "must use it" message they can never resolve.
+  const alreadySelected = G.selectedCards.some(c=>c.id===card.id);
+  if(G.displaceMode && G.displaceJoker && card.id === G.displaceJoker.id && alreadySelected) {
+    setStatus('You must use the Joker in a Meld or Lay Off first!');
+    return;
+  }
+  const idx = G.selectedCards.findIndex(c=>c.id===card.id);
+  if(idx>=0) G.selectedCards.splice(idx,1);
+  else G.selectedCards.push(card);
+  // Update selection classes in-place instead of full re-render
+  document.querySelectorAll('#human-hand .bzf-card').forEach(el => {
+    const cardId = parseInt(el.dataset.cardId);
+    if(!cardId) return;
+    const isSel = G.selectedCards.some(c=>c.id===cardId);
+    el.classList.toggle('sel', isSel);
+  });
+  updateMeldPreview();
+  updateActionButtons();
+}
+
+function updateMeldPreview() {
+  const preview = document.getElementById('meld-preview');
+  const sel = G.selectedCards.filter(c=>!c.isJoker||true);
+  if(sel.length < 2) { preview.className='meld-preview'; preview.style.display='none'; return; }
+  const result = validateMeld(sel);
+  preview.style.display='block';
+  if(result.valid) {
+    preview.className='meld-preview show valid';
+    preview.textContent='✓ Valid '+result.type+(result.isComplete?' COMPLETE':'');
+  } else {
+    preview.className='meld-preview show invalid';
+    preview.textContent='✗ '+result.reason;
+  }
+}
+
+// ══════════════════════════════════════════════
+// AI LOGIC
+// ══════════════════════════════════════════════
+function aiTakeTurn() {
+  const player = currentPlayer();
+  if(player.isHuman) return;
+  // Record gin eligibility at start of AI turn
+  player.ginEligible = (player.tableau.length === 0);
+
+  showAIThinking(true);
+  
+  setTimeout(()=>{
+    // 1. Draw phase
+    aiDraw(player);
+
+    setTimeout(()=>{
+      // 2. Act phase: try to meld, layoff, displace
+      const handEnded = aiAct(player);
+
+      if(!handEnded) {
+        setTimeout(()=>{
+          showAIThinking(false);
+          advanceTurn();
+        }, 300);
+      }
+    }, 400);
+  }, 300);
+}
+
+function aiDraw(player) {
+  if(G.discardPile.length > 0) {
+    const top = G.discardPile[G.discardPile.length-1];
+    if(aiWantsDiscard(player, top)) {
+      player.hand.push(G.discardPile.pop());
+      glog(player.name+' draws from discard.','info');
+      checkAndShowBid();
+      return;
+    }
+  }
+  if(G.deck.length > 0) {
+    player.hand.push(G.deck.pop());
+    glog(player.name+' draws from deck.','info');
+    checkAndShowBid();
+  } else {
+    glog('Deck exhausted — hand ends!','imp');
+    showAIThinking(false);
+    checkHandEnd();
+  }
+}
+
+function aiWantsDiscard(player, card) {
+  // Find index of this card in discard pile
+  const cardIdx = G.discardPile.findIndex(c=>c.id===card.id);
+  if(cardIdx < 0) return false;
+
+  // All cards that would be picked up (cardIdx to top)
+  const pickedUp = G.discardPile.slice(cardIdx);
+
+  // Simulate: combine hand + picked up cards, greedily meld/layoff
+  const simHand = [...player.hand, ...pickedUp];
+  const simTableaux = G.players.map(p=>({
+    seat: p.seat,
+    team: p.team,
+    tableau: p.tableau.map(m=>({ ...m, cards: [...m.cards] }))
+  }));
+
+  // Greedy meld pass
+  let melded = true;
+  while(melded) {
+    melded = false;
+    // Try melds
+    const meld = findBestMeld(simHand);
+    if(meld) {
+      meld.forEach(c=>{ const i=simHand.findIndex(h=>h.id===c.id); if(i>=0) simHand.splice(i,1); });
+      melded = true;
+      continue;
+    }
+    // Try layoffs (apply strategy rules)
+    for(let i=simHand.length-1;i>=0;i--) {
+      const c = simHand[i];
+      let laidOff = false;
+      for(const sp of simTableaux) {
+        const isOpponent = sp.team !== player.team;
+        for(const m of sp.tableau) {
+          if(!canLayoff(c, m)) continue;
+          // Apply strategy: no arrows on opponent melds
+          if(c.isArrow && isOpponent) continue;
+          // No skull sextet completion on opponent melds
+          if(c.isSkull && isOpponent) {
+            const testCards = [...m.cards, c];
+            if(testCards.length===6 && testCards.every(tc=>tc.isSkull) && validateMeld(testCards).valid) continue;
+          }
+          simHand.splice(i,1);
+          m.cards.push(c);
+          laidOff = true;
+          melded = true;
+          break;
+        }
+        if(laidOff) break;
+      }
+      if(laidOff) break;
+    }
+  }
+
+  // Count unplayable cards remaining in simHand
+  // A skull is unplayable unless it would complete a skull set on own/teammate meld
+  const unplayable = simHand.filter(c => {
+    if(!c.isSkull) return true; // non-skull is unplayable (can't be played further)
+    // Skull: check if it would complete a skull set on own/teammate meld
+    for(const sp of simTableaux) {
+      if(sp.team !== player.team) continue;
+      for(const m of sp.tableau) {
+        if(!canLayoff(c, m)) continue;
+        const testCards = [...m.cards, c];
+        if(testCards.every(tc=>tc.isSkull) && testCards.length <= 6) return false; // playable skull
+      }
+    }
+    return true; // skull with no useful home = unplayable
+  });
+
+  // Accept if 1 or fewer unplayable cards remain
+  // The 1 allowed unplayable must not be a "useless skull" (already filtered above)
+  const uselessSkulls = simHand.filter(c => {
+    if(!c.isSkull) return false;
+    for(const sp of simTableaux) {
+      if(sp.team !== player.team) continue;
+      for(const m of sp.tableau) {
+        if(!canLayoff(c, m)) continue;
+        const testCards = [...m.cards, c];
+        if(testCards.every(tc=>tc.isSkull) && testCards.length <= 6) return false;
+      }
+    }
+    return true;
+  });
+
+  if(uselessSkulls.length > 0) return false; // never pick up if stuck with useless skulls
+  return unplayable.length <= 1;
+}
+
+function aiAct(player) {
+  // Try displacing Jokers if it would help form a new meld
+  for(const handCard of [...player.hand]) {
+    const targets = findDisplaceTargets(handCard);
+    if(targets.length > 0) {
+      // Check if taking the Joker would help (can form a meld with other hand cards)
+      const target = targets[0];
+      const joker = target.joker;
+      const testHand = [...player.hand.filter(c=>c.id!==handCard.id), joker];
+      const meldWithJoker = findBestMeld(testHand);
+      if(meldWithJoker) {
+        // Do the displace
+        const owner = G.players.find(p=>p.seat===target.seat);
+        const meld = owner.tableau[target.mi];
+        if(!meld) continue;
+        const repIdx = player.hand.findIndex(c=>c.id===handCard.id);
+        if(repIdx < 0) continue;
+        player.hand.splice(repIdx, 1);
+        const jIdx = meld.cards.findIndex(c=>c.id===joker.id);
+        meld.cards.splice(jIdx, 1, handCard);
+        sortSFMeld(meld);
+        const wasComp = meld.isComplete;
+        const res = validateMeld(meld.cards);
+        meld.isComplete = res.isComplete || false;
+        awardCompletionBonus(meld, wasComp);
+        player.hand.push(joker);
+        glog(player.name+' displaces '+joker.name+' with '+handCard.name,'info');
+        break; // one displace per turn
+      }
+    }
+  }
+
+  // Try to form melds from hand
+  let melded = true;
+  while(melded) {
+    melded = false;
+    const meld = findBestMeld(player.hand);
+    if(meld) {
+      meld.forEach(c=>{ const i=player.hand.findIndex(h=>h.id===c.id); if(i>=0)player.hand.splice(i,1); });
+      const result = validateMeld(meld);
+      const meldObj = {cards:meld, type:result.type, ownerIdx:player.seat, isComplete:result.isComplete||false};
+      if(meld.some(c=>c.isTopDog)) transferMeldOwnership(meldObj);
+      sortSFMeld(meldObj);
+      G.players.find(p=>p.seat===meldObj.ownerIdx).tableau.push(meldObj);
+      awardStarVP(meld, player);
+      awardCompletionBonus(meldObj, false);
+      glog(player.name+' melds '+meld.map(c=>c.displayRank).join(','),'info');
+      melded = true;
+
+      if(player.hand.length === 0) {
+        showAIThinking(false);
+        if(player.ginEligible) {
+          triggerGoOut(player.seat, true);
+          return true;
+        }
+        // Had melds — draw 3 and end turn
+        glog(player.name+' emptied hand via meld — draws 3.','info');
+        for(let i=0;i<3;i++) { if(G.deck.length) player.hand.push(G.deck.pop()); }
+        advanceTurn();
+        return true;
+      }
+    }
+  }
+
+  // Try layoffs
+  let laidOff = true;
+  while(laidOff) {
+    laidOff = false;
+    for(const card of [...player.hand]) {
+      for(const p of G.players) {
+        for(const meld of [...p.tableau]) {
+          if(canLayoff(card,meld)) {
+            const meldOwner = G.players.find(q=>q.seat===meld.ownerIdx);
+            const isOpponentMeld = meldOwner && meldOwner.team !== player.team;
+
+            // Rule 1: Never lay off Arrow cards onto opponent melds
+            if(card.isArrow && isOpponentMeld) continue;
+
+            // Rule 2: Never complete a skull sextet on an opponent's meld
+            const wouldCompleteSkullSextet = (() => {
+              if(!card.isSkull || !isOpponentMeld) return false;
+              const testCards = [...meld.cards, card];
+              if(testCards.length !== 6) return false;
+              const res = validateMeld(testCards);
+              if(!res.valid || res.type !== 'SET') return false;
+              return testCards.every(c=>c.isSkull);
+            })();
+            if(wouldCompleteSkullSextet) continue;
+
+            const hIdx=player.hand.findIndex(c=>c.id===card.id);
+            if(hIdx>=0){
+              player.hand.splice(hIdx,1);
+              meld.cards.push(card);
+              const wasComp = meld.isComplete;
+              const res = validateMeld(meld.cards);
+              meld.isComplete = res.isComplete||false;
+              sortSFMeld(meld);
+              awardStarVP([card], player);
+              awardCompletionBonus(meld, wasComp);
+              if(card.isTopDog) {
+                const prevSeat = p.seat;
+                transferMeldOwnership(meld);
+                if(meld.ownerIdx !== prevSeat) {
+                  p.tableau.splice(p.tableau.indexOf(meld),1);
+                  G.players.find(q=>q.seat===meld.ownerIdx).tableau.push(meld);
+                }
+              }
+              glog(player.name+' lays off '+card.name,'info');
+              laidOff=true;
+
+              if(player.hand.length === 0) {
+                if(player.ginEligible) {
+                  showAIThinking(false);
+                  triggerGoOut(player.seat, true);
+                  return true;
+                }
+                // Draw 3
+                glog(player.name+' draws 3 (emptied hand via layoff).','info');
+                for(let i=0;i<3;i++) if(G.deck.length) player.hand.push(G.deck.pop());
+                showAIThinking(false);
+                advanceTurn();
+                return true;
+              }
+              break;
+            }
+          }
+        }
+        if(laidOff) break;
+      }
+      if(laidOff) break;
+    }
+  }
+
+  // Discard worst card
+  if(player.hand.length > 0) {
+    const discard = aiPickDiscard(player.hand);
+    const idx = player.hand.findIndex(c=>c.id===discard.id);
+    player.hand.splice(idx,1);
+    G.discardPile.push(discard);
+    glog(player.name+' discards '+discard.name+'.','info');
+
+    if(player.hand.length === 0) {
+      showAIThinking(false);
+      triggerGoOut(player.seat, false);
+      return true;
+    }
+  }
+  return false;
+}
+
+function findBestMeld(hand) {
+  // Try all combinations of 3+ cards
+  for(let size=6;size>=3;size--) {
+    const combo = findMeldOfSize(hand,size);
+    if(combo) return combo;
+  }
+  return null;
+}
+
+function findMeldOfSize(hand, size) {
+  if(hand.length < size) return null;
+  const combos = combinations(hand, size);
+  for(const combo of combos) {
+    if(validateMeld(combo).valid) return combo;
+  }
+  return null;
+}
+
+function combinations(arr, k) {
+  if(k===0) return [[]];
+  if(arr.length < k) return [];
+  const [first,...rest] = arr;
+  const withFirst = combinations(rest,k-1).map(c=>[first,...c]);
+  const withoutFirst = combinations(rest,k);
+  return [...withFirst,...withoutFirst];
+}
+
+function aiPickDiscard(hand) {
+  // Discard: prefer skull, then TC/joker if can't use, then highest rank non-VP card
+  const skulls = hand.filter(c=>c.isSkull);
+  if(skulls.length) return skulls[0];
+  const tc = hand.filter(c=>c.isTopCat);
+  if(tc.length) return tc[0];
+  // Discard highest rank non-Star/Arrow card
+  const sorted = [...hand].sort((a,b)=>{
+    const aScore = a.isStar?-10:a.isArrow?-5:a.rank;
+    const bScore = b.isStar?-10:b.isArrow?-5:b.rank;
+    return bScore-aScore;
+  });
+  return sorted[0];
+}
+
+// ══════════════════════════════════════════════
+// SCORING SCREEN
+// ══════════════════════════════════════════════
+function showScoreScreen(scores) {
+  showScreen('score-screen');
+  const title = G.players.filter(p=>p.goOutPosition===1).map(p=>p.name).join(' & ')+' went out first!';
+  document.getElementById('score-title').textContent = title;
+
+  const thead = `<thead><tr>
+    <th>Player</th><th>Bid</th><th>Out</th><th>↑ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
+  </tr></thead>`;
+
+  const posLabel = {1:'1st 🥇', 2:'2nd 🥈', 3:'3rd 🥉'};
+  const bidLabel = {laoda:'LAODA', pinyin:'PINYIN', null:'—'};
+  const tbody = '<tbody>'+scores.map((s,i)=>{
+    const p = G.players[i];
+    const isWinner = p.totalVP >= G.targetVP;
+    return `<tr class="${isWinner?'winner':''}">
+      <td style="color:${teamColorLight(p)};font-weight:700">${p.name}</td>
+      <td style="color:${p.bid==='laoda'?'var(--gold)':p.bid==='pinyin'?'var(--arrow)':'var(--text3)'}">${bidLabel[p.bid]||'—'}</td>
+      <td>${p.goOutPosition ? (posLabel[p.goOutPosition]||p.goOutPosition) : '—'}</td>
+      <td style="color:var(--arrow)">${s.arrowVP>0?'+'+s.arrowVP:'—'}</td>
+      <td style="color:var(--skull)">${s.skullVP<0?s.skullVP:'—'}</td>
+      <td style="color:var(--gold)">${s.tpVP!==0?(s.tpVP>0?'+':'')+s.tpVP:'—'}</td>
+      <td style="color:var(--gold)">${s.completedBonus>0?'+'+s.completedBonus:'—'}</td>
+      <td style="color:var(--gold)">${s.skullSextetBonus>0?'+'+s.skullSextetBonus+' 💀':'—'}</td>
+      <td style="color:var(--gold)">${s.lockedBonus>0?'+25 🏆':'—'}</td>
+      <td style="color:var(--gold)">${s.goOutBonus>0?'+'+s.goOutBonus:'—'}</td>
+      <td style="color:var(--gold)">${s.teamOutBonus>0?'+'+s.teamOutBonus+' 🤝':'—'}</td>
+      <td style="color:${s.bidBonus>0?'var(--gold)':'var(--skull)'}">${s.bidBonus!==0?(s.bidBonus>0?'+':'')+s.bidBonus:'—'}</td>
+      <td style="color:var(--gold)">${s.ginBonus>0?'+'+s.ginBonus:'—'}</td>
+      <td style="color:var(--skull)">${s.handPenalty<0?s.handPenalty:'—'}</td>
+      <td style="font-weight:700;color:${s.total>=0?'#2ecc71':'var(--skull)'}">${s.total>=0?'+':''}${s.total}</td>
+      <td style="font-weight:700;color:var(--gold)">${p.totalVP}</td>
+    </tr>`;
+  }).join('')+'</tbody>';
+
+  document.getElementById('score-table').innerHTML = thead+tbody;
+
+  const winners = G.players.filter(p=>p.totalVP>=G.targetVP);
+  if(winners.length) setTimeout(()=>showWinScreen(winners),1500);
+}
+
+function showWinScreen(winners) {
+  showScreen('win-screen');
+  const names = winners.map(p=>p.name+(p.isHuman?' (You)':'')).join(' & ');
+  document.getElementById('win-title').textContent = '🏆 VICTORY!';
+  document.getElementById('win-sub').textContent = names+' reached '+G.targetVP+' VP!';
+
+  // Build final standings table sorted by total VP descending
+  const sorted = [...G.players].sort((a,b)=>b.totalVP-a.totalVP);
+  const posLabel = {1:'1st 🥇',2:'2nd 🥈',3:'3rd 🥉'};
+  const bidLabel = {laoda:'LAODA',pinyin:'PINYIN'};
+
+  const thead = `<thead><tr>
+    <th>Player</th><th>Team</th><th>Bid</th><th>Out</th><th>↑ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
+  </tr></thead>`;
+
+  const s = sorted.map(p=>p.handScore||{arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0});
+  const tbody = '<tbody>'+sorted.map((p,i)=>{
+    const hs = p.handScore||{arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0};
+    const isWinner = winners.some(w=>w.seat===p.seat);
+    return `<tr class="${isWinner?'winner':''}">
+      <td style="color:${teamColor(p)};font-weight:900">${p.name}${p.isHuman?' ★':''}</td>
+      <td><span class="chip-team ${teamBadgeClass(p)}">${teamBadgeLabel(p)}</span></td>
+      <td style="color:${p.bid==='laoda'?'var(--gold)':p.bid==='pinyin'?'var(--arrow)':'var(--text3)'}">${bidLabel[p.bid]||'—'}</td>
+      <td>${p.goOutPosition?(posLabel[p.goOutPosition]||p.goOutPosition):'—'}</td>
+      <td style="color:var(--arrow)">${hs.arrowVP>0?'+'+hs.arrowVP:'—'}</td>
+      <td style="color:var(--skull)">${hs.skullVP<0?hs.skullVP:'—'}</td>
+      <td style="color:var(--gold)">${hs.tpVP!==0?(hs.tpVP>0?'+':'')+hs.tpVP:'—'}</td>
+      <td style="color:var(--gold)">${hs.completedBonus>0?'+'+hs.completedBonus:'—'}</td>
+      <td style="color:var(--gold)">${hs.skullSextetBonus>0?'+'+hs.skullSextetBonus+' 💀':'—'}</td>
+      <td style="color:var(--gold)">${hs.lockedBonus>0?'+25 🏆':'—'}</td>
+      <td style="color:var(--gold)">${hs.goOutBonus>0?'+'+hs.goOutBonus:'—'}</td>
+      <td style="color:var(--gold)">${hs.teamOutBonus>0?'+'+hs.teamOutBonus+' 🤝':'—'}</td>
+      <td style="color:${hs.bidBonus>0?'var(--gold)':'var(--skull)'}">${hs.bidBonus!==0?(hs.bidBonus>0?'+':'')+hs.bidBonus:'—'}</td>
+      <td style="color:var(--gold)">${hs.ginBonus>0?'+'+hs.ginBonus:'—'}</td>
+      <td style="color:var(--skull)">${hs.handPenalty<0?hs.handPenalty:'—'}</td>
+      <td style="font-weight:700;color:${hs.total>=0?'var(--coins)':'var(--skull)'}">${hs.total>=0?'+':''}${hs.total}</td>
+      <td style="font-weight:900;font-size:1rem;color:${isWinner?'var(--coins)':'var(--text)'}">${p.totalVP}</td>
+    </tr>`;
+  }).join('')+'</tbody>';
+
+  document.getElementById('win-score-table').innerHTML = thead+tbody;
+}
+
+function nextHand() {
+  showScreen('game-screen');
+  dealNewHand(false);
+}
+
+function newGame() {
+  showScreen('setup-screen');
+}
+
+// ══════════════════════════════════════════════
+// RENDERING
+// ══════════════════════════════════════════════
+function renderAll() {
+  renderScoreBar();
+  renderTableaux();
+  renderHumanHand();
+  renderDiscardPile();
+  updateActionButtons();
+  document.getElementById('deck-count').textContent='Deck: '+G.deck.length;
+  document.getElementById('hand-goal').textContent='Target: '+G.targetVP+' VP — Hand '+G.handNum;
+  // Hide bid bar unless it's the current human player's turn and they haven't bid yet
+  const bar = document.getElementById('bid-bar');
+  if(bar) {
+    const cp = currentPlayer();
+    const showBid = cp.isHuman && !cp.hasBid && G.phase === 'act';
+    bar.style.display = showBid ? 'block' : 'none';
+  }
+  if (NET.mode==='host' && NET.started) netScheduleState();
+}
+
+function renderScoreBar() {
+  const container = document.getElementById('score-chips');
+  container.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const chip=document.createElement('div');
+    chip.className='score-chip'+(p.isHuman?' human':'')+(p.seat===G.currentSeat?' active-turn':'');
+    chip.innerHTML=`<span class="chip-name" style="color:${teamColorLight(p)};font-weight:700">${p.name}${p.isHuman?' ★':''}</span>`+
+      `<span class="chip-team ${teamBadgeClass(p)}">${teamBadgeLabel(p)}</span>`+
+      `<span class="chip-vp">${p.totalVP} VP</span>`+
+      (p.bid?`<span style="font-family:'Cinzel',serif;font-size:0.5rem;font-weight:700;color:${p.bid==='laoda'?'var(--gold)':'var(--arrow)'}">${p.bid.toUpperCase()}</span>`:``) +
+      `<span style="font-family:'Cinzel',serif;font-size:0.9rem;font-weight:900;color:${teamColor(p)}">${p.hand.length}🃏</span>`;
+    container.appendChild(chip);
+  });
+}
+
+function renderTableaux() {
+  const aiArea = document.getElementById('ai-tableau-area');
+  const humanArea = document.getElementById('human-tableau-area');
+  aiArea.innerHTML='';
+  humanArea.innerHTML='';
+
+  G.players.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='player-tableau'+(p.isHuman?' human-tableau':'')+(p.seat===G.currentSeat?' active-tableau':'');
+
+    const header=document.createElement('div');
+    header.className='tab-header';
+    const nameEl=document.createElement('span');
+    nameEl.className='tab-name'+(p.isHuman?' human':'');
+    nameEl.style.color = teamColor(p);
+    nameEl.textContent=p.name+(p.seat===G.currentSeat?' ◄':'')+(!p.isHuman?'':' (You)');
+    const teamBadge=document.createElement('span');
+    teamBadge.className='tab-team-badge '+teamBadgeClass(p);
+    teamBadge.textContent=teamBadgeLabel(p);
+    header.appendChild(nameEl);
+    header.appendChild(teamBadge);
+    const cardCount=document.createElement('span');
+    cardCount.style.cssText='font-family:"Cinzel",serif;font-size:0.72rem;font-weight:900;color:'+teamColor(p)+';margin-left:4px;';
+    cardCount.textContent=p.hand.length+' 🃏';
+    header.appendChild(cardCount);
+    div.appendChild(header);
+
+    const meldsRow=document.createElement('div');
+    meldsRow.className='melds-row';
+
+    if(p.tableau.length===0){
+      const empty=document.createElement('span');
+      empty.className='empty-tableau';
+      empty.textContent='No melds yet';
+      meldsRow.appendChild(empty);
+    } else {
+      p.tableau.forEach((meld,mi)=>{
+        meldsRow.appendChild(makeMeldBlock(meld,i,mi));
+      });
+    }
+    div.appendChild(meldsRow);
+
+    // Current human player's tableau goes in the human area; all others go in AI area
+    const isCurrentHuman = currentPlayer().isHuman && p.seat === currentPlayer().seat;
+    if(isCurrentHuman) humanArea.appendChild(div);
+    else aiArea.appendChild(div);
+  });
+}
+
+function makeMeldBlock(meld, pi, mi) {
+  const locked = isMeldLocked(meld);
+  const block=document.createElement('div');
+  block.className='meld-block';
+  if(meld.isComplete || locked) block.classList.add('complete-meld');
+  if(locked) block.classList.add('locked-meld');
+
+  // ownerSeat = the player whose tableau this meld lives in (used for doDisplace lookup)
+  const tableauOwner = G.players[pi];
+  const ownerSeat = tableauOwner ? tableauOwner.seat : 0;
+
+  if(locked) {
+    // Collapsed: show only colored strips side by side
+    const badge=document.createElement('span');
+    badge.className='meld-type-badge';
+    badge.textContent='✦ '+meld.type+' ×6';
+    block.appendChild(badge);
+    meld.cards.forEach(card=>{
+      const strip=document.createElement('div');
+      strip.className='meld-strip-only bzf-sc-'+card.suit+' bzf-sbg-'+card.suit;
+      if(card.isJoker) strip.classList.add('bzf-joker-card');
+      const icon=SUIT_ICON[card.suit]||'?';
+      const rankStr=card.displayRank;
+      const vpStr=card.vpLabel;
+      const vpSym=card.vpSymbol;
+      strip.innerHTML=
+        '<div class="bzf-c-strip" style="width:100%;border-radius:3px;">'+
+          '<span class="bzf-c-strip-rank" '+rankFontStyle(card.stripRank)+'>'+card.stripRank+'</span>'+
+          '<span class="bzf-c-strip-suit">'+icon+'</span>'+
+          '<span class="bzf-c-strip-vp">'+vpSym+'</span>'+
+        '</div>';
+      block.appendChild(strip);
+    });
+  } else {
+    // Normal: full meld cards
+    const badge=document.createElement('span');
+    badge.className='meld-type-badge';
+    badge.textContent=(meld.isComplete?'✦ ':'')+meld.type;
+    block.appendChild(badge);
+
+    const meldJoker = getMeldJoker(meld);
+    // Layoff-select mode: highlight valid target melds
+    const isLayoffTarget = G.layoffSelectMode && currentPlayer().isHuman
+      && (G.layoffTargets||[]).some(t=>t.seat===ownerSeat&&t.mi===mi);
+    if(isLayoffTarget) {
+      block.classList.add('layoff-target');
+      block.addEventListener('click', ()=>doLayoff(ownerSeat, mi));
+    }
+    // In displace-select mode, only highlight Jokers that are valid targets for the replacement card
+    const isValidDisplaceTarget = G.displaceSelectMode && currentPlayer().isHuman
+      && meldJoker
+      && G.displaceReplacementCard
+      && findDisplaceTargets(G.displaceReplacementCard).some(t=>t.seat===ownerSeat&&t.mi===mi);
+    meld.cards.forEach(card=>{
+      const isDisplaceable = isValidDisplaceTarget && card.id === meldJoker.id;
+      const cardEl = makeMeldCard(card, isDisplaceable ? ()=>doDisplace(ownerSeat, mi) : null);
+      block.appendChild(cardEl);
+    });
+  }
+
+  return block;
+}
+
+function makeMeldCard(card, onClickFn) {
+  const wrap=document.createElement('div');
+  wrap.className='bzf-card-wrap';
+
+  const inner=document.createElement('div');
+  inner.className='bzf-meld-card bzf-sc-'+card.suit+' bzf-sbg-'+card.suit;
+  if(card.isJoker) inner.classList.add('bzf-joker-card');
+  if(onClickFn) inner.classList.add('displace-target');
+
+  const icon = SUIT_ICON[card.suit]||'?';
+  const rankStr = card.displayRank;
+  const vpStr = card.vpLabel;
+      const vpSym = card.vpSymbol;
+
+  inner.innerHTML=
+    '<div class="bzf-c-strip">'+
+      '<span class="bzf-c-strip-rank" '+rankFontStyle(card.stripRank)+'>'+card.stripRank+'</span>'+
+      '<span class="bzf-c-strip-suit">'+icon+'</span>'+
+      '<span class="bzf-c-strip-vp">'+vpSym+'</span>'+
+    '</div>'+
+    '<div class="bzf-c-face">'+
+      '<span class="bzf-c-big-rank">'+rankStr+'</span>'+
+      '<span class="bzf-c-big-suit">'+icon+'</span>'+
+      (vpStr?'<span class="bzf-c-vp-small">'+vpStr+'</span>':'')+
+    '</div>';
+
+  if(onClickFn) inner.addEventListener('click', onClickFn);
+
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+function renderHumanHand() {
+  // Remote client (Phase 2a+): always show my own assigned seat's hand — it's the
+  // only one the host sent unmasked to me, regardless of who's currently acting.
+  // Online host: always show the HOST's own hand (seat 0) — never a remote player's
+  // hand, even though the host's own G has full visibility of it. Showing whoever's
+  // turn it is (the old local-hotseat behavior) would leak a remote human's cards.
+  // Local hotseat: show current player's hand on their turn, or the next human otherwise.
+  const cp = currentPlayer();
+  let player;
+  if (NET.mode==='join' && NET.inGame && NET.mySeat!=null) {
+    player = G.players.find(p=>p.seat===NET.mySeat);
+  } else if (NET.mode==='host' && NET.started) {
+    player = G.players.find(p=>p.seat===0);
+  } else {
+    player = cp.isHuman ? cp : G.players.filter(p=>p.isHuman).sort((a,b)=>a.seat-b.seat)[0];
+  }
+  if(!player) return;
+  const container=document.getElementById('human-hand');
+  container.innerHTML='';
+  document.getElementById('hand-count').textContent=player.hand.length;
+  
+  // Only render interactive cards during this player's turn
+  const isMyTurn = cp.isHuman && cp.seat === player.seat;
+  const sorted=[...player.hand].sort((a,b)=>a.sortKey-b.sortKey);
+  sorted.forEach(card=>{
+    container.appendChild(makeHandCard(card));
+  });
+}
+
+function makeHandCard(card) {
+  const wrap=document.createElement('div');
+  wrap.className='bzf-card-wrap';
+  
+  const isSel=G.selectedCards.some(c=>c.id===card.id);
+  const isJokerDisplace=G.displaceMode&&card.isJoker&&G.displaceJoker&&card.id===G.displaceJoker.id;
+  const isMustUse=G.mustUseCardId&&card.id===G.mustUseCardId;
+  
+  const inner=document.createElement('div');
+  let cls='bzf-card bzf-sc-'+card.suit+' bzf-sbg-'+card.suit+' hand';
+  if(card.isJoker) cls+=' bzf-joker-card';
+  if(isSel) cls+=' sel';
+  if(isJokerDisplace||isMustUse) cls+=' hint';
+  inner.className=cls;
+  inner.dataset.cardId = card.id;
+  
+  const icon=SUIT_ICON[card.suit]||'?';
+  const rankStr=card.displayRank;
+  const vpStr=card.vpLabel;
+      const vpSym=card.vpSymbol;
+  
+  inner.innerHTML=
+    '<div class="bzf-c-strip">'+
+      '<span class="bzf-c-strip-rank" '+rankFontStyle(card.stripRank)+'>'+card.stripRank+'</span>'+
+      '<span class="bzf-c-strip-suit">'+icon+'</span>'+
+      '<span class="bzf-c-strip-vp">'+vpSym+'</span>'+
+    '</div>'+
+    '<div class="bzf-c-face">'+
+      '<span class="bzf-c-big-rank">'+rankStr+'</span>'+
+      '<span class="bzf-c-big-suit">'+icon+'</span>'+
+      (vpStr?'<span class="bzf-c-vp-small">'+vpStr+'</span>':'')+
+    '</div>';
+  
+  let _lastTouch = 0;
+  inner.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    _lastTouch = Date.now();
+    glog('tap: '+card.displayRank+card.suit+' (phase='+G.phase+', isHuman='+currentPlayer().isHuman+', myTurn='+(G.currentSeat===NET.mySeat)+')');
+    if(G.phase==='act' && currentPlayer().isHuman) toggleCardSel(card);
+  }, {passive:false});
+  inner.addEventListener('click', () => {
+    if(Date.now() - _lastTouch < 500) return; // suppress synthetic click after touch
+    glog('click: '+card.displayRank+card.suit+' (phase='+G.phase+', isHuman='+currentPlayer().isHuman+', myTurn='+(G.currentSeat===NET.mySeat)+')');
+    if(G.phase==='act' && currentPlayer().isHuman) toggleCardSel(card);
+  });
+  
+  // Tooltip
+  const tipLines=[card.name];
+  if(card.isTopDog) tipLines.push('Top Dog — Arrow +5↑\nMeld ownership → lowest VP player');
+  else if(card.isTopCat) tipLines.push('Top Cat — −5 VP\nMeld ownership → lowest/highest VP');
+  else if(card.isStar) tipLines.push('Star ★ — scores 5 VP in Tableau');
+  else if(card.isArrow) tipLines.push('Arrow ↑ — team scores 5 VP each');
+  else if(card.isSkull) tipLines.push('Skull ☠ — excess Skull penalty −5 VP\nPenalty if held in hand: −5 VP');
+  inner.title=tipLines.join('\n');
+  
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+function renderDiscardPile() {
+  const pile=document.getElementById('discard-pile');
+  pile.innerHTML='';
+  // Render oldest first (index 0 at top of list), newest last (bottom = top of pile)
+  G.discardPile.forEach((card,i)=>{
+    pile.appendChild(makeDiscardCard(card, i, i===G.discardPile.length-1));
+  });
+}
+
+function makeDiscardCard(card, pileIdx, isTop) {
+  const wrap=document.createElement('div');
+  wrap.className='bzf-card-wrap';
+
+  const inner=document.createElement('div');
+  let cls = isTop ? 'bzf-dis-card dis-top ' : 'bzf-dis-card ';
+  cls += 'bzf-sc-'+card.suit+' bzf-sbg-'+card.suit;
+  if(card.isJoker) cls += ' bzf-joker-card';
+  inner.className = cls;
+
+  const icon=SUIT_ICON[card.suit]||'?';
+  const rankStr=card.displayRank;
+  const vpStr=card.vpLabel;
+      const vpSym=card.vpSymbol;
+  inner.innerHTML=
+    '<div class="bzf-c-strip" style="width:100%;border-radius:3px;right:0;justify-content:space-between;padding:2px 0;">'+
+      '<span class="bzf-c-strip-rank" style="font-size:0.6rem;font-weight:900;line-height:1;flex:0 0 auto;">'+card.stripRank+'</span>'+
+      '<span class="bzf-c-strip-suit" style="font-size:0.7rem;flex:0 0 auto;line-height:1;">'+icon+'</span>'+
+      '<span class="bzf-c-strip-vp" style="font-size:0.5rem;flex:0 0 auto;line-height:1;min-height:0.5rem;">'+vpSym+'</span>'+
+    '</div>';
+
+  // Clickable during draw phase for human
+  inner.addEventListener('click', ()=>{
+    if(G.phase==='draw' && currentPlayer().isHuman) {
+      pickFromDiscard(pileIdx);
+    }
+  });
+  inner.title = card.name + (isTop?' (top of pile)':' — click to pick up with everything above');
+
+  wrap.appendChild(inner);
+  return wrap;
+}
+
+function updateActionButtons() {
+  const isHumanTurn = currentPlayer().isHuman;
+  const phase = G.phase;
+  const hasSel = G.selectedCards.length > 0;
+  const hasDrawn = phase === 'act';
+  
+  const set=(id,en)=>{ const b=document.getElementById(id); if(b) b.disabled=!en; };
+  
+  set('btn-draw-deck', isHumanTurn && phase==='draw' && G.deck.length>0);
+  set('btn-draw-dis',  isHumanTurn && phase==='draw' && G.discardPile.length>0);
+  set('btn-back',      isHumanTurn && phase==='act' && !!G.discardPickSnapshot);
+  set('btn-meld',      isHumanTurn && hasDrawn && hasSel && G.selectedCards.length>=3);
+  set('btn-layoff',    isHumanTurn && hasDrawn && (G.layoffSelectMode || (hasSel && G.selectedCards.length>=1)));
+
+  // Update layoff button label
+  const layBtn = document.getElementById('btn-layoff');
+  if(layBtn) layBtn.textContent = G.layoffSelectMode ? '✕ CANCEL' : 'LAY OFF';
+  set('btn-displace',  isHumanTurn && hasDrawn && !G.displaceMode && (G.displaceSelectMode || G.selectedCards.length===1));
+  set('btn-discard',   isHumanTurn && hasDrawn && hasSel && G.selectedCards.length===1 && !G.displaceMode);
+
+  // Update displace button label to reflect select mode
+  const dispBtn = document.getElementById('btn-displace');
+  if(dispBtn) dispBtn.textContent = G.displaceSelectMode ? '✕ CANCEL' : 'DISPLACE';
+  
+  if(!isHumanTurn) setStatus('');
+}
+
+let _statusTimer = null;
+function setStatus(msg) {
+  document.getElementById('action-status').textContent=msg;
+  if(_statusTimer) clearTimeout(_statusTimer);
+  if(msg) _statusTimer = setTimeout(()=>{ document.getElementById('action-status').textContent=''; }, 4000);
+}
+
+function showAIThinking(show) {
+  document.getElementById('ai-thinking-indicator').innerHTML=
+    show?'<span class="ai-thinking">'+currentPlayer().name+' thinking…</span>':'';
+}
+
+// ══════════════════════════════════════════════
+// UTILITY
+// ══════════════════════════════════════════════
+function showHandoff(player) {
+  if (NET.mode !== 'local') { showScreen('game-screen'); renderAll(); return; } // no device-passing online
+  const humanCount = G.players.filter(p=>p.isHuman).length;
+  if(humanCount <= 1) { showScreen('game-screen'); renderAll(); return; }
+  document.getElementById('handoff-name').textContent = player.name.toUpperCase();
+  document.getElementById('handoff-sub').textContent =
+    'Pass the device to '+player.name+', then tap to reveal your hand.';
+  showScreen('handoff-screen');
+}
+
+function revealHand() {
+  showScreen('game-screen');
+  renderAll();
+}
+
+function toggleLog() {
+  const logArea = document.getElementById('game-log-area');
+  const btn = document.getElementById('log-toggle-btn');
+  const visible = logArea.style.display !== 'none';
+  logArea.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? 'LOG ▾' : 'LOG ▴';
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  NET.lastScreenId = id;
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function glog(msg, cls) {
+  const log=document.getElementById('game-log');
+  const entry=document.createElement('div');
+  entry.className='log-entry'+(cls?' '+cls:'');
+  entry.textContent=msg;
+  log.insertBefore(entry,log.firstChild);
+  // Keep last 60 entries
+  while(log.children.length>60) log.removeChild(log.lastChild);
+}
+
+// Close modal on overlay click
+document.getElementById('modal-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeModal();
+});
+</script>
+</body>
+</html>
