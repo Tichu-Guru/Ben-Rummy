@@ -1021,7 +1021,7 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v26';
+const GAME_VERSION = 'v27';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
@@ -1716,6 +1716,7 @@ function netInitHost(attempt){
       NET.joiners = NET.joiners.filter(j=>j.conn!==conn);
       for (const k of Object.keys(NET.seatAssign)) if (NET.seatAssign[k].conn===conn) delete NET.seatAssign[k];
       netRenderHostLobby(); netBroadcastLobby();
+      netHandleDisconnect(conn);
     });
     conn.on('error', ()=>{});
   });
@@ -1744,6 +1745,34 @@ function netHostData(conn, d){
 function netSeatOfConn(conn){
   for (const k of Object.keys(NET.remoteSeats)) if (NET.remoteSeats[k]===conn) return +k;
   return null;
+}
+// Called when a remote connection closes. If it was controlling a seat mid-game, hand
+// that seat over to AI rather than leaving the game stalled waiting for input that will
+// never arrive — the seat had no reconnect path (Phase 3), so this is the safety net.
+function netHandleDisconnect(conn){
+  if (!NET.started || !G || !G.nPlayers) return;
+  const seat = netSeatOfConn(conn);
+  if (seat===null) return;
+  delete NET.remoteSeats[seat];
+  const player = G.players.find(p=>p.seat===seat);
+  if (!player) return;
+  player.isHuman = false;
+  glog(player.name+' disconnected — AI is taking over their seat.', 'bad');
+  if (G.currentSeat !== seat) { renderAll(); return; } // not their turn — normal AI dispatch picks them up later
+  // It's currently their turn. Resume from wherever they left off rather than
+  // re-drawing (aiTakeTurn() always draws first, which would double-draw if they'd
+  // already drawn this turn).
+  showAIThinking(true);
+  if (G.phase === 'draw') {
+    setTimeout(()=>aiTakeTurn(), 500);
+  } else {
+    setTimeout(()=>{
+      const handEnded = aiAct(player);
+      if(!handEnded) {
+        setTimeout(()=>{ showAIThinking(false); advanceTurn(); }, 300);
+      }
+    }, 500);
+  }
 }
 function netSeatedJoiners(){ return new Set(Object.values(NET.seatAssign)); }
 function netPlaceUnseated(){
@@ -1960,6 +1989,10 @@ function netSerializeG(forSeat){
   // Joker the current player is required to use — that's authoritative game state, and
   // must reach the seat it belongs to, or their client has no way to know it's selected.
   out.selectedCards = (G.displaceMode && forSeat === G.currentSeat) ? netPack(G.selectedCards) : [];
+  // The deck is 96-192 real card objects, but the client only ever needs G.deck.length
+  // (for the "Deck: N" display) — sending the full deck on every broadcast was pure
+  // wasted bandwidth and a real contributor to lag over a long game.
+  out.deck = new Array(G.deck.length).fill(null);
   return out;
 }
 function netScheduleState(){
