@@ -112,6 +112,14 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
   text-align:center;
   margin-bottom:32px;
 }
+.version-tag{
+  font-family:'Crimson Pro',serif;
+  font-size:0.65rem;
+  color:var(--text3);
+  text-align:center;
+  letter-spacing:1px;
+  opacity:0.65;
+}
 .setup-row{margin-bottom:24px;}
 .setup-label{
   font-family:'Cinzel',serif;
@@ -799,6 +807,7 @@ body.net-client #action-bar{padding-bottom:38px;}
   <div class="setup-box">
     <div class="game-title">BEN RUMMY</div>
     <div class="game-subtitle">A BZF DECK CARD GAME</div>
+    <div class="version-tag" id="version-tag-setup"></div>
 
     <div class="setup-row" id="section-gamemode">
       <span class="setup-label">GAME MODE</span>
@@ -899,6 +908,7 @@ body.net-client #action-bar{padding-bottom:38px;}
       <div id="discard-strip-header">
         <span class="strip-label">DISCARD PILE</span>
         <span id="deck-count">Deck: 0</span>
+        <span class="version-tag" id="version-tag-game" style="opacity:0.4;"></span>
         <button id="log-toggle-btn" onclick="toggleLog()">LOG ▾</button>
       </div>
       <div id="discard-pile-scroll">
@@ -1010,6 +1020,11 @@ function isTPCard(rank)    { return [4,10,13].includes(rank); }      // 4, 10, Q
 let G = {};
 
 // Setup selections
+// Bump this on every saved version so the on-screen tag always matches the filename.
+const GAME_VERSION = 'v26';
+document.getElementById('version-tag-setup').textContent = GAME_VERSION;
+document.getElementById('version-tag-game').textContent = GAME_VERSION;
+
 let setupNP = 4;
 let setupVP = 700;
 // Player configs: [{name, isHuman}] indexed 0..5
