@@ -1021,7 +1021,7 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v27';
+const GAME_VERSION = 'v28';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
@@ -1640,7 +1640,7 @@ function transferMeldOwnership(meld) {
 // GAME INIT
 // ══════════════════════════════════════════════
 // ══ ONLINE MULTIPLAYER (Phase 1) ══
-const NET = { mode:'local', peer:null, roomCode:null, joiners:[], hostConn:null, started:false, myName:'', seatAssign:{}, remoteSeats:{}, mySeat:null, inGame:false, stateInterval:null, lastScreenId:'setup-screen' };
+const NET = { mode:'local', peer:null, roomCode:null, joiners:[], hostConn:null, started:false, myName:'', seatAssign:{}, remoteByPid:{}, mySeat:null, inGame:false, stateInterval:null, lastScreenId:'setup-screen' };
 const NET_PREFIX = 'benrummy-';
 const netEsc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function netRoomCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; return c; }
@@ -1667,7 +1667,7 @@ function setGameMode(mode){
 function netTeardown(){
   if (NET.peer) { try{ NET.peer.destroy(); }catch(e){} }
   NET.peer=null; NET.hostConn=null; NET.joiners=[]; NET.roomCode=null; NET.started=false; NET.seatAssign={};
-  NET.remoteSeats={}; NET.mySeat=null; NET.inGame=false; NET._lastLog=null; NET._lastScreenSeen=null;
+  NET.remoteByPid={}; NET.mySeat=null; NET.inGame=false; NET._lastLog=null; NET._lastScreenSeen=null;
   if (NET.stateInterval){ clearInterval(NET.stateInterval); NET.stateInterval=null; }
   document.body.classList.remove('net-client');
   document.body.classList.remove('net-myturn');
@@ -1742,18 +1742,27 @@ function netHostData(conn, d){
     netApplyIntent(seat, d);
   }
 }
-function netSeatOfConn(conn){
-  for (const k of Object.keys(NET.remoteSeats)) if (NET.remoteSeats[k]===conn) return +k;
+function netPidOfConn(conn){
+  for (const k of Object.keys(NET.remoteByPid)) if (NET.remoteByPid[k]===conn) return +k;
   return null;
+}
+// Seats get reshuffled every hand by assignTeams() (solo/team rebalancing), so a remote
+// connection's seat must always be re-derived from its stable playerId, never cached.
+function netSeatOfConn(conn){
+  const pid = netPidOfConn(conn);
+  if (pid===null || !G || !G.players) return null;
+  const p = G.players.find(pl=>pl.playerId===pid);
+  return p ? p.seat : null;
 }
 // Called when a remote connection closes. If it was controlling a seat mid-game, hand
 // that seat over to AI rather than leaving the game stalled waiting for input that will
 // never arrive — the seat had no reconnect path (Phase 3), so this is the safety net.
 function netHandleDisconnect(conn){
   if (!NET.started || !G || !G.nPlayers) return;
+  const pid = netPidOfConn(conn);
+  if (pid===null) return;
   const seat = netSeatOfConn(conn);
-  if (seat===null) return;
-  delete NET.remoteSeats[seat];
+  delete NET.remoteByPid[pid];
   const player = G.players.find(p=>p.seat===seat);
   if (!player) return;
   player.isHuman = false;
@@ -2012,9 +2021,12 @@ function netCollectUI(){
 function netSendStates(){
   if (NET.mode!=='host' || !NET.started || !G || !G.nPlayers) return;
   const ui = netCollectUI();
-  for (const seatStr of Object.keys(NET.remoteSeats)){
-    const seat = +seatStr, conn = NET.remoteSeats[seatStr];
+  for (const pidStr of Object.keys(NET.remoteByPid)){
+    const pid = +pidStr, conn = NET.remoteByPid[pidStr];
     if (!conn || !conn.open) continue;
+    const p = G.players.find(pl=>pl.playerId===pid);
+    if (!p) continue;
+    const seat = p.seat; // re-derived fresh every broadcast — seats reshuffle every hand
     try{ conn.send({t:'state', seat, g: netSerializeG(seat), ui}); }catch(e){}
   }
 }
@@ -2039,11 +2051,15 @@ function netApplyUI(ui){
 
 /* ══════════ ONLINE MULTIPLAYER — PHASE 2b (Remote Play) ══════════ */
 function netIsRemoteControlled(seat){
-  return NET.mode==='host' && NET.started && !!NET.remoteSeats[seat];
+  if (NET.mode!=='host' || !NET.started || !G || !G.players) return false;
+  const p = G.players.find(pl=>pl.seat===seat);
+  if (!p) return false;
+  return !!NET.remoteByPid[p.playerId];
 }
 function netSendReject(seat, msg){
   glog(`✕ ${netEsc(msg)} (rejected for a remote player)`, 'bad');
-  const conn = NET.remoteSeats[seat];
+  const p = G.players.find(pl=>pl.seat===seat);
+  const conn = p ? NET.remoteByPid[p.playerId] : null;
   if (conn && conn.open){ try{ conn.send({t:'reject', msg}); }catch(e){} }
 }
 // Runs fn() on the host, capturing any setStatus() calls (which would otherwise
@@ -2159,10 +2175,12 @@ function startGame() {
       });
     }
     NET.started = true;
-    NET.remoteSeats = {};
-    for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.remoteSeats[i] = NET.seatAssign[i].conn;
-    NET.startSeats = {};
-    for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.startSeats[i] = NET.seatAssign[i].name;
+    // playerId === i here (both assigned in this same loop, before any reseating has
+    // ever happened), so this is the one moment it's safe to key by the loop index.
+    // From here on, always resolve current seat via playerId — assignTeams() reshuffles
+    // .seat every hand for the solo/team system, but playerId never changes.
+    NET.remoteByPid = {};
+    for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.remoteByPid[i] = NET.seatAssign[i].conn;
     netBroadcast({t:'start'});
     if (NET.stateInterval) clearInterval(NET.stateInterval);
     NET.stateInterval = setInterval(netSendStates, 2000); // safety net for any state change that skips renderAll()
@@ -3401,7 +3419,7 @@ function renderAll() {
   const bar = document.getElementById('bid-bar');
   if(bar) {
     const cp = currentPlayer();
-    const showBid = cp.isHuman && !cp.hasBid && G.phase === 'act';
+    const showBid = cp.isHuman && !cp.hasBid && G.phase === 'act' && !netIsRemoteControlled(cp.seat);
     bar.style.display = showBid ? 'block' : 'none';
   }
   if (NET.mode==='host' && NET.started) netScheduleState();
