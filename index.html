@@ -1021,7 +1021,7 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v28';
+const GAME_VERSION = 'v29';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
@@ -3350,6 +3350,9 @@ function showScoreScreen(scores) {
 
   const winners = G.players.filter(p=>p.totalVP>=G.targetVP);
   if(winners.length) setTimeout(()=>showWinScreen(winners),1500);
+  // showScoreScreen() doesn't go through renderAll(), so without this, remote clients
+  // never learn the hand ended — their last snapshot stays frozen mid-hand forever.
+  netScheduleState();
 }
 
 function showWinScreen(winners) {
@@ -3393,6 +3396,7 @@ function showWinScreen(winners) {
   }).join('')+'</tbody>';
 
   document.getElementById('win-score-table').innerHTML = thead+tbody;
+  netScheduleState(); // same reason as showScoreScreen() — this doesn't go through renderAll()
 }
 
 function nextHand() {
