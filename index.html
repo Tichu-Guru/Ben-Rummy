@@ -852,6 +852,15 @@ body.net-client #action-bar{padding-bottom:38px;}
       <div id="player-slots"></div>
     </div>
 
+    <div class="setup-row" id="section-scoring">
+      <span class="setup-label">SCORING MODE</span>
+      <div class="btn-group" id="scoring-group">
+        <button class="btn-opt sel" id="scoring-bzf-btn" onclick="setBZFScoring(true)">BZF Scoring</button>
+        <button class="btn-opt" id="scoring-rummy-btn" onclick="setBZFScoring(false)">Play Rummy</button>
+      </div>
+      <div class="vp-hint" id="scoring-hint">Full Star/Arrow/Skull/TP VP system (current rules).</div>
+    </div>
+
     <div class="setup-row" id="section-vp">
       <span class="setup-label">TARGET VICTORY POINTS</span>
       <div class="btn-group" id="vp-group" style="margin-bottom:8px;">
@@ -933,8 +942,8 @@ body.net-client #action-bar{padding-bottom:38px;}
       <div id="bid-bar" style="display:none;">
         <div id="bid-bar-inner">
           <span class="bid-bar-label">DECLARE YOUR BID:</span>
-          <button class="bid-btn laoda" onclick="humanBid('laoda')">LAODA<span class="bid-hint">+40 bonus if 1st/2nd / −40 fail</span></button>
-          <button class="bid-btn pinyin" onclick="humanBid('pinyin')">PINYIN<span class="bid-hint">+30 bonus if 2nd/3rd / −30 fail</span></button>
+          <button class="bid-btn laoda" onclick="humanBid('laoda')">LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 team fail</span></button>
+          <button class="bid-btn pinyin" onclick="humanBid('pinyin')">PINYIN<span class="bid-hint">+25 team if any out / −25 team fail</span></button>
           <button class="bid-btn pass" onclick="humanBid(null)">PASS</button>
         </div>
       </div>
@@ -1021,12 +1030,13 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v29';
+const GAME_VERSION = 'v31';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
 let setupNP = 4;
 let setupVP = 700;
+let setupBZFScoring = true;
 // Player configs: [{name, isHuman}] indexed 0..5
 let setupPlayers = [
   {name:'You', isHuman:true},
@@ -1084,6 +1094,14 @@ function selVP(v) {
 function selVPCustom(v) {
   const n = parseInt(v);
   if(n > 0) { setupVP = n; document.querySelectorAll('#vp-group .btn-opt').forEach(b=>b.classList.remove('sel')); }
+}
+function setBZFScoring(useBZF) {
+  setupBZFScoring = useBZF;
+  document.getElementById('scoring-bzf-btn').classList.toggle('sel', useBZF);
+  document.getElementById('scoring-rummy-btn').classList.toggle('sel', !useBZF);
+  document.getElementById('scoring-hint').textContent = useBZF
+    ? 'Full Star/Arrow/Skull/TP VP system (current rules).'
+    : 'Star/Arrow/Skull/TP off. Melds, Team Out, Go-out, and Gin bonuses doubled. Jokers: +10 played, +10 held in a meld at hand-end, −10 stuck in hand. Laoda/Pinyin unchanged.';
 }
 
 // Init slots on page load
@@ -1273,15 +1291,27 @@ function trySF(cards) {
   return {valid:true, type:'SF', suit, low:min, high:max, isComplete};
 }
 
-// Award +5 VP immediately to the player who just completed a meld
+// Award immediate meld-completion VP to the player who just completed a meld
+// (+10 in BZF mode, +20 in Play Rummy mode)
 function awardCompletionBonus(meld, wasComplete) {
   if(!meld.isComplete || wasComplete) return;
   const completer = currentPlayer();
-  completer.totalVP += 10;
-  glog((completer.isHuman?'You':completer.name)+' completed a '+meld.type+' meld! +10 VP','good');
+  const vp = G.bzfScoring ? 10 : 20;
+  completer.totalVP += vp;
+  glog((completer.isHuman?'You':completer.name)+' completed a '+meld.type+' meld! +'+vp+' VP','good');
 }
-// Award immediate Star VP to the player who played those cards
+// BZF mode: award immediate Star VP to the player who played those cards.
+// Play Rummy mode: Star/Arrow/Skull/TP are off — Jokers score +10 immediate instead.
 function awardStarVP(cards, player) {
+  if (!G.bzfScoring) {
+    let vp = 0;
+    for(const c of cards) if(c.isJoker) vp += 10;
+    if(vp > 0) {
+      player.totalVP += vp;
+      glog((player.isHuman?'You':player.name)+' scored +'+vp+' for playing a Joker!','good');
+    }
+    return;
+  }
   let vp = 0;
   for(const c of cards) {
     if(c.rank === 1) vp += 10;       // Ace = +10★
@@ -1364,9 +1394,13 @@ function meldIsPositive(meld) {
 
 // Full hand scoring for all players
 function scoreHand(players) {
+  const mult = G.bzfScoring ? 1 : 2; // "Play Rummy" mode doubles everything except declarations & card-type VP
+
   const scores = players.map((p,i) => {
-    // Hand penalty: -5 per Skull still in hand (Jokers no longer penalize)
-    const handPenalty = p.hand.reduce((s,c) => s + c.penaltyVP, 0);
+    // Hand penalty: -5 per Skull (BZF mode) or -10 per Joker (Play Rummy mode) still in hand
+    const handPenalty = G.bzfScoring
+      ? p.hand.reduce((s,c) => s + c.penaltyVP, 0)
+      : p.hand.reduce((s,c) => s + (c.isJoker ? -10 : 0), 0);
 
     let skullVP = 0, arrowCount = 0, completedBonus = 0, tpVP = 0;
     const wentOut = !!p.goOutPosition;
@@ -1374,57 +1408,69 @@ function scoreHand(players) {
     for(const m of p.tableau) {
       const locked = isMeldLocked(m);
       for(const c of m.cards) {
-        // Arrow (ranks 2,3,6 — note rank 2 counts as arrow too)
-        if(c.isArrow) arrowCount++;
-        // Skull — only penalizes if player went out
-        if(c.isSkull && !locked && wentOut) skullVP -= 5;
-        // TP — TD/TC and ranks 4,10,Q
-        if(c.isTP) tpVP += c.tpValue;
+        if (G.bzfScoring) {
+          // Arrow (ranks 2,3,6 — note rank 2 counts as arrow too)
+          if(c.isArrow) arrowCount++;
+          // Skull — only penalizes if player went out
+          if(c.isSkull && !locked && wentOut) skullVP -= 5;
+          // TP — TD/TC and ranks 4,10,Q
+          if(c.isTP) tpVP += c.tpValue;
+        } else {
+          // Play Rummy mode: Jokers score +10 VP for sitting in an owned meld at hand-end
+          // (reuses the tpVP slot — unused in this mode — so the score table needs no changes)
+          if(c.isJoker) tpVP += 10;
+        }
       }
-      if(locked) completedBonus += 10;
+      if(locked) completedBonus += 10 * mult;
     }
 
-    // TP cards still in hand — collected for pool distribution later
-    const handTPPool = p.hand.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0);
+    // TP cards still in hand — collected for pool distribution later (BZF mode only)
+    const handTPPool = G.bzfScoring ? p.hand.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0) : 0;
 
     return { idx:i, skullVP, skullPenalty:skullVP, starVP:0, tdVP:0, tcVP:0,
              arrowCount, completedBonus, tpVP, handTPPool, handPenalty };
   });
 
-  // Team arrow VP: only scored if at least 1 team member went out
+  // Team arrow VP: only scored if at least 1 team member went out (BZF mode only)
   // Sum arrow counts across ALL team members, award total × 5 to every team member
   const teamNums = [...new Set(players.map(p=>p.team))];
-  teamNums.forEach(team => {
-    const teamPlayers = players.filter(p=>p.team===team);
-    const teamWentOut = teamPlayers.some(p=>p.goOutPosition);
-    if(!teamWentOut) {
-      scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = 0; });
-    } else {
-      const totalArrows = teamPlayers.reduce((sum,p) => {
-        const ps = scores[players.indexOf(p)];
-        return sum + (ps ? ps.arrowCount : 0);
-      }, 0);
-      scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = totalArrows * 5; });
-    }
-  });
+  if (G.bzfScoring) {
+    teamNums.forEach(team => {
+      const teamPlayers = players.filter(p=>p.team===team);
+      const teamWentOut = teamPlayers.some(p=>p.goOutPosition);
+      if(!teamWentOut) {
+        scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = 0; });
+      } else {
+        const totalArrows = teamPlayers.reduce((sum,p) => {
+          const ps = scores[players.indexOf(p)];
+          return sum + (ps ? ps.arrowCount : 0);
+        }, 0);
+        scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = totalArrows * 5; });
+      }
+    });
+  } else {
+    scores.forEach(s => { s.arrowVP = 0; });
+  }
 
-  // TP hand pool: TP cards still in hand at hand-end
+  // TP hand pool: TP cards still in hand at hand-end (BZF mode only)
   // Total pooled, divided evenly among 1st-out player's team, remainder to 1st-out
-  const totalHandTP = scores.reduce((s,sc) => s + sc.handTPPool, 0);
-  if(totalHandTP !== 0) {
-    const firstOut = players.find(p=>p.goOutPosition===1);
-    if(firstOut) {
-      const firstOutTeam = players.filter(p=>p.team===firstOut.team);
-      const share = Math.floor(totalHandTP / firstOutTeam.length);
-      const remainder = totalHandTP - share * firstOutTeam.length;
-      scores.forEach((s,i) => {
-        if(players[i].team === firstOut.team) s.tpVP += share;
-        if(players[i].seat === firstOut.seat) s.tpVP += remainder;
-      });
+  if (G.bzfScoring) {
+    const totalHandTP = scores.reduce((s,sc) => s + sc.handTPPool, 0);
+    if(totalHandTP !== 0) {
+      const firstOut = players.find(p=>p.goOutPosition===1);
+      if(firstOut) {
+        const firstOutTeam = players.filter(p=>p.team===firstOut.team);
+        const share = Math.floor(totalHandTP / firstOutTeam.length);
+        const remainder = totalHandTP - share * firstOutTeam.length;
+        scores.forEach((s,i) => {
+          if(players[i].team === firstOut.team) s.tpVP += share;
+          if(players[i].seat === firstOut.seat) s.tpVP += remainder;
+        });
+      }
     }
   }
 
-  // Locked meld team bonus: most locked melds = +25 each, no tie
+  // Locked meld team bonus: most locked melds = +25 (×mult) each, no tie
   scores.forEach((s,i) => {
     s.lockedCount = 0;
     for(const m of players[i].tableau) if(isMeldLocked(m)) s.lockedCount++;
@@ -1437,22 +1483,24 @@ function scoreHand(players) {
   const teamsWithMax = teams.filter(t=>teamLocked[t]===maxLocked);
   if(maxLocked > 0 && teamsWithMax.length === 1) {
     const winningTeam = teamsWithMax[0];
-    scores.forEach((s,i) => { if(players[i].team===winningTeam) s.lockedBonus = 25; });
+    scores.forEach((s,i) => { if(players[i].team===winningTeam) s.lockedBonus = 25 * mult; });
   }
 
-  // Skull sextet team bonus: +60 VP to every team member for each pure skull sextet owned
+  // Skull sextet team bonus (BZF mode only): +60 VP to every team member for each pure skull sextet owned
   scores.forEach((s,i) => { s.skullSextetBonus = 0; });
-  players.forEach((p,i) => {
-    const sextetCount = p.tableau.filter(m=>isSkullSextet(m)).length;
-    if(sextetCount > 0) {
-      // Award +60 VP per sextet to every member of this player's team
-      scores.forEach((s,j) => {
-        if(players[j].team === p.team) s.skullSextetBonus += sextetCount * 60;
-      });
-    }
-  });
+  if (G.bzfScoring) {
+    players.forEach((p,i) => {
+      const sextetCount = p.tableau.filter(m=>isSkullSextet(m)).length;
+      if(sextetCount > 0) {
+        // Award +60 VP per sextet to every member of this player's team
+        scores.forEach((s,j) => {
+          if(players[j].team === p.team) s.skullSextetBonus += sextetCount * 60;
+        });
+      }
+    });
+  }
 
-  // Team out bonus: +50 if 2 team members went out, +100 if 3 — exclusive, all team members earn it
+  // Team out bonus: +50 (×mult) if 2 team members went out, +100 (×mult) if 3 — exclusive, all team members earn it
   scores.forEach((s,i) => { s.teamOutBonus = 0; });
   const teamsOut = {};
   teams.forEach(t => {
@@ -1461,23 +1509,24 @@ function scoreHand(players) {
   });
   scores.forEach((s,i) => {
     const outCount = teamsOut[players[i].team];
-    if(outCount >= 3) s.teamOutBonus = 100;
-    else if(outCount >= 2) s.teamOutBonus = 50;
+    if(outCount >= 3) s.teamOutBonus = 100 * mult;
+    else if(outCount >= 2) s.teamOutBonus = 50 * mult;
   });
 
-  // Go-out position bonuses
-  const posVP = {1:40, 2:30, 3:20};
+  // Go-out position bonuses (×mult)
+  const posVP = {1:40*mult, 2:30*mult, 3:20*mult};
   scores.forEach((s,i) => {
     s.goOutBonus = 0; s.ginBonus = 0; s.bidBonus = 0;
     const p = players[i];
     const pos = p.goOutPosition;
     if(pos) {
       s.goOutBonus = posVP[pos] || 0;
-      if(p.goOutIsGin) s.ginBonus = 25;
+      if(p.goOutIsGin) s.ginBonus = 25 * mult;
     }
   });
 
-  // Bid bonus/penalty with team-based rules — runs ONCE, outside per-player loop
+  // Bid bonus/penalty with team-based rules — UNCHANGED regardless of mode; declarations
+  // never scale with the Play Rummy toggle. Runs ONCE, outside per-player loop.
   const bidTeams = [...new Set(players.map(p=>p.team))];
   const is2P = players.length === 2;
 
@@ -2154,6 +2203,7 @@ function startGame() {
     discardPickSnapshot: null,
     outSeat: undefined,
     outIsGin: false,
+    bzfScoring: setupBZFScoring,
   };
   
   // Create players from setup config
