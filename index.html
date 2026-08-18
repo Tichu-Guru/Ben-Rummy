@@ -66,11 +66,11 @@ html{touch-action:manipulation;}
   --td:#aa7000;
   --tc:#3858b8;
   --cream:#f8f2e4;
-  --card-w:58px;
-  --card-h:86px;
-  --strip-w:18px;
-  --meld-w:46px;
-  --meld-h:68px;
+  --card-w:73px;
+  --card-h:108px;
+  --strip-w:27px;
+  --meld-w:58px;
+  --meld-h:86px;
   --dis-w:28px;
   --dis-h:44px;
 }
@@ -442,7 +442,7 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 }
 .bzf-c-strip-rank{font-size:0.44rem;font-weight:900;color:#fff;line-height:1;font-family:'Cinzel',serif;flex:0 0 auto;}
 .bzf-c-strip-suit{font-size:0.6rem;color:rgba(255,255,255,0.95);line-height:1;flex:1 0 auto;display:flex;align-items:center;justify-content:center;}
-.bzf-c-strip-vp{font-size:0.36rem;font-weight:900;color:rgba(255,255,255,1);line-height:1;text-align:center;flex:0 0 auto;padding-bottom:1px;white-space:nowrap;}
+.bzf-c-strip-vp{font-size:0.42rem;font-weight:900;color:rgba(255,255,255,1);line-height:1;text-align:center;flex:0 0 auto;padding-bottom:1px;white-space:nowrap;}
 .bzf-c-face{
   position:absolute;top:0;left:var(--strip-w);right:0;bottom:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 2px;
@@ -793,7 +793,7 @@ body.net-client #net-spectate-banner{display:block;}
 body.net-client #action-bar{padding-bottom:38px;}
 
 @media(max-width:600px){
-  :root{--card-w:44px;--card-h:66px;--strip-w:13px;--meld-w:36px;--meld-h:54px;--dis-w:22px;--dis-h:34px;}
+  :root{--card-w:54px;--card-h:81px;--strip-w:19px;--meld-w:44px;--meld-h:67px;--dis-w:22px;--dis-h:34px;}
   #side-panel{width:160px;}
   .setup-box{padding:28px 20px;}
   .game-title{font-size:1.6rem;}
@@ -844,6 +844,10 @@ body.net-client #action-bar{padding-bottom:38px;}
         <button class="btn-opt sel" onclick="selNP(4)">4P</button>
         <button class="btn-opt" onclick="selNP(5)">5P</button>
         <button class="btn-opt" onclick="selNP(6)">6P</button>
+        <button class="btn-opt" onclick="selNP(7)">7P</button>
+        <button class="btn-opt" onclick="selNP(8)">8P</button>
+        <button class="btn-opt" onclick="selNP(9)">9P</button>
+        <button class="btn-opt" onclick="selNP(10)">10P</button>
       </div>
     </div>
 
@@ -1018,7 +1022,7 @@ const AI_NAMES = ['North','East','South','West','Zephyr'];
 
 // VP card flags
 function isStarCard(rank)  { return [1,2,9,11].includes(rank); }   // Ace, 2, 9, Page
-function isArrowCard(rank) { return [2,3,6].includes(rank); }        // 2, 3, 6
+function isArrowCard(rank) { return [2,5,14].includes(rank); }        // 2, 5 (double +), King (double -)
 function isSkullCard(rank) { return [7,9,12].includes(rank); }       // 7, 9, Knight
 function isTPCard(rank)    { return [4,10,13].includes(rank); }      // 4, 10, Queen
 // Jokers: TD=+5 Arrow, TC=-5
@@ -1030,14 +1034,14 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v32';
+const GAME_VERSION = 'v47';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
 let setupNP = 4;
 let setupVP = 700;
 let setupBZFScoring = true;
-// Player configs: [{name, isHuman}] indexed 0..5
+// Player configs: [{name, isHuman}] indexed 0..9
 let setupPlayers = [
   {name:'You', isHuman:true},
   {name:'', isHuman:false},
@@ -1045,9 +1049,13 @@ let setupPlayers = [
   {name:'', isHuman:false},
   {name:'', isHuman:false},
   {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
+  {name:'', isHuman:false},
 ];
 
-const AI_DEFAULTS = ['North','East','South','West','Zephyr'];
+const AI_DEFAULTS = ['North','East','South','West','Zephyr','Nova','Atlas','Luna','Orion'];
 
 function renderPlayerSlots() {
   const container = document.getElementById('player-slots');
@@ -1120,19 +1128,17 @@ function newCard(suit, rank, subtype) {
     get isJoker()  { return this.rank === 15; },
     get isTopDog() { return this.role === 'TopDog'; },
     get isTopCat() { return this.role === 'TopCat'; },
-    get isStar()   { return !this.isJoker && isStarCard(this.rank); },
-    get isArrow()  { return !this.isJoker && isArrowCard(this.rank); },
-    get isSkull()  { return !this.isJoker && isSkullCard(this.rank); },
-    get isTP()     { return (!this.isJoker && isTPCard(this.rank)) || this.isTopDog || this.isTopCat; },
+    get isStar()   { return (!this.isJoker && isStarCard(this.rank)) || this.isTopCat; },
+    get isArrow()  { return (!this.isJoker && isArrowCard(this.rank)) || this.isTopDog; },
+    get isSkull()  { return (!this.isJoker && isSkullCard(this.rank)) || this.isTopCat; },
+    get isTP()     { return !this.isJoker && isTPCard(this.rank); },
     get tpValue()  {
-      if(this.isTopDog) return 5;
-      if(this.isTopCat) return -5;
       if(this.rank===4) return 5;
       if(this.rank===10) return 10;
       if(this.rank===13) return 10;
       return 0;
     },
-    get penaltyVP(){ return this.isSkull ? -5 : 0; }, // Jokers no longer penalize in hand
+    get penaltyVP(){ return this.isSkull ? (this.rank===12 ? -10 : -5) : 0; }, // catches a held Skull card or TC; Knight is double
     get displayRank() {
       if(this.isJoker) return this.isTopDog ? 'TD' : 'TC';
       if(this.rank===1) return 'A';
@@ -1161,25 +1167,29 @@ function newCard(suit, rank, subtype) {
       return this.rank * 10 + sIdx;
     },
     get vpLabel() {
-      if(this.isTopDog) return 'TP+5';
-      if(this.isTopCat) return 'TP-5';
-      if(this.rank===1) return '★+10';
-      if(this.rank===2) return '★↑+5';
-      if(this.rank===9) return '★☠';
-      if(this.rank===11) return '★+5';
-      if(this.isArrow)  return '↑+5';
-      if(this.isSkull)  return '☠-5';
-      if(this.isTP)     return 'TP+'+this.tpValue;
+      if(this.isTopCat) return '+5 -5';
+      if(this.rank===1) return '+10';
+      if(this.rank===2) return '+5 +5';
+      if(this.rank===9) return '+5 -5';
+      if(this.rank===11) return '+5';
+      if(this.rank===5)  return '+10';
+      if(this.rank===14) return '-10';
+      if(this.rank===12) return '-10';
+      if(this.isArrow)  return '+5';
+      if(this.isSkull)  return '-5';
+      if(this.isTP)     return '+'+this.tpValue;
       return '';
     },
     get vpSymbol() {
-      if(this.isTopDog) return 'TP';
-      if(this.isTopCat) return 'TP';
-      if(this.rank===1) return '★';
-      if(this.rank===2) return '★↑';
+      if(this.isTopCat) return '★☠';
+      if(this.rank===1) return '★★';
+      if(this.rank===2) return '★▲';
       if(this.rank===9) return '★☠';
       if(this.rank===11) return '★';
-      if(this.isArrow)  return '↑';
+      if(this.rank===5)  return '▲▲';
+      if(this.rank===14) return '▼▼';
+      if(this.rank===12) return '☠☠';
+      if(this.isArrow)  return '▲';
       if(this.isSkull)  return '☠';
       if(this.isTP)     return 'TP';
       return '';
@@ -1195,7 +1205,7 @@ function buildSuit(suit) {
 }
 
 function buildDeck(nPlayers) {
-  const deckCount = nPlayers >= 5 ? 2 : 1;
+  const deckCount = nPlayers >= 7 ? 3 : (nPlayers >= 5 ? 2 : 1);
   const cards = [];
   for(let d=0;d<deckCount;d++) {
     for(const suit of SUITS_ALL) cards.push(...buildSuit(suit));
@@ -1308,6 +1318,7 @@ function awardStarVP(cards, player) {
     for(const c of cards) if(c.isJoker) vp += 10;
     if(vp > 0) {
       player.totalVP += vp;
+      player.handStarVP = (player.handStarVP||0) + vp;
       glog((player.isHuman?'You':player.name)+' scored +'+vp+' for playing a Joker!','good');
     }
     return;
@@ -1318,9 +1329,11 @@ function awardStarVP(cards, player) {
     else if(c.rank === 2) vp += 5;   // 2 = +5★
     else if(c.rank === 9) vp += 5;   // 9 = +5★ (dual card)
     else if(c.rank === 11) vp += 5;  // Page = +5★
+    else if(c.isTopCat) vp += 5;     // TC = +5★ (dual Star+Skull card)
   }
   if(vp > 0) {
     player.totalVP += vp;
+    player.handStarVP = (player.handStarVP||0) + vp;
     glog((player.isHuman?'You':player.name)+' scored +'+vp+' Star VP!','good');
   }
 }
@@ -1370,6 +1383,14 @@ function isSkullSextet(meld) {
   if(meld.cards.length !== 6) return false;
   return meld.cards.every(c=>c.isSkull);
 }
+// A pure King sextet: locked 6-card Set where all cards are Kings, no Joker.
+// Kings within this meld are exempt from their standard -10 Arrow penalty.
+function isKingSextet(meld) {
+  if(!isMeldLocked(meld)) return false;
+  if(meld.type !== 'SET') return false;
+  if(meld.cards.length !== 6) return false;
+  return meld.cards.every(c=>c.rank===14);
+}
 function getMeldJoker(meld) {
   if(isMeldLocked(meld)) return null;
   return meld.cards.find(c=>c.isJoker) || null;
@@ -1407,12 +1428,18 @@ function scoreHand(players) {
 
     for(const m of p.tableau) {
       const locked = isMeldLocked(m);
+      const kingSextet = isKingSextet(m);
       for(const c of m.cards) {
         if (G.bzfScoring) {
-          // Arrow (ranks 2,3,6 — note rank 2 counts as arrow too)
-          if(c.isArrow) arrowCount++;
-          // Skull — only penalizes if player went out
-          if(c.isSkull && !locked && wentOut) skullVP -= 5;
+          // Arrow: rank 2 (+1 unit), rank 5 (+2 units, double), King (-2 units, double-negative,
+          // exempt if part of a locked King Sextet), TD Joker (+1 unit)
+          if(c.isArrow) {
+            if(c.rank===5) arrowCount += 2;
+            else if(c.rank===14) { if(!kingSextet) arrowCount -= 2; }
+            else arrowCount += 1;
+          }
+          // Skull — only penalizes if player went out; Knight (rank 12) is double
+          if(c.isSkull && !locked && wentOut) skullVP -= (c.rank===12 ? 10 : 5);
           // TP — TD/TC and ranks 4,10,Q
           if(c.isTP) tpVP += c.tpValue;
         } else {
@@ -1427,16 +1454,23 @@ function scoreHand(players) {
     // TP cards still in hand — collected for pool distribution later (BZF mode only)
     const handTPPool = G.bzfScoring ? p.hand.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0) : 0;
 
-    return { idx:i, skullVP, skullPenalty:skullVP, starVP:0, tdVP:0, tcVP:0,
+    return { idx:i, skullVP, skullPenalty:skullVP, starVP:(p.handStarVP||0), tdVP:0, tcVP:0,
              arrowCount, completedBonus, tpVP, handTPPool, handPenalty };
   });
 
   // Team arrow VP: only scored if at least 1 team member went out (BZF mode only)
-  // Sum arrow counts across ALL team members, award total × 5 to every team member
+  // Sum arrow counts across ALL team members, award total × 5 to every team member.
+  // Solo players never earn Arrow VP — it's a team-pooling mechanic, and a solo
+  // player has no team to pool with.
   const teamNums = [...new Set(players.map(p=>p.team))];
   if (G.bzfScoring) {
     teamNums.forEach(team => {
       const teamPlayers = players.filter(p=>p.team===team);
+      const isSoloTeam = teamPlayers.length===1 && teamPlayers[0].isSolo;
+      if(isSoloTeam) {
+        scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = 0; });
+        return;
+      }
       const teamWentOut = teamPlayers.some(p=>p.goOutPosition);
       if(!teamWentOut) {
         scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = 0; });
@@ -1453,17 +1487,18 @@ function scoreHand(players) {
   }
 
   // TP hand pool: TP cards still in hand at hand-end (BZF mode only)
-  // Total pooled, divided evenly among 1st-out player's team, remainder to 1st-out
+  // Total pooled, divided evenly among ALL players who went out this hand
+  // (regardless of team), remainder to whoever went out 1st.
   if (G.bzfScoring) {
     const totalHandTP = scores.reduce((s,sc) => s + sc.handTPPool, 0);
     if(totalHandTP !== 0) {
       const firstOut = players.find(p=>p.goOutPosition===1);
-      if(firstOut) {
-        const firstOutTeam = players.filter(p=>p.team===firstOut.team);
-        const share = Math.floor(totalHandTP / firstOutTeam.length);
-        const remainder = totalHandTP - share * firstOutTeam.length;
+      const wentOutPlayers = players.filter(p=>p.goOutPosition);
+      if(firstOut && wentOutPlayers.length > 0) {
+        const share = Math.floor(totalHandTP / wentOutPlayers.length);
+        const remainder = totalHandTP - share * wentOutPlayers.length;
         scores.forEach((s,i) => {
-          if(players[i].team === firstOut.team) s.tpVP += share;
+          if(players[i].goOutPosition) s.tpVP += share;
           if(players[i].seat === firstOut.seat) s.tpVP += remainder;
         });
       }
@@ -1495,6 +1530,21 @@ function scoreHand(players) {
         // Award +60 VP per sextet to every member of this player's team
         scores.forEach((s,j) => {
           if(players[j].team === p.team) s.skullSextetBonus += sextetCount * 60;
+        });
+      }
+    });
+  }
+
+  // King sextet team bonus (BZF mode only): +60 VP to every team member for each pure King sextet owned.
+  // Same rule as Skull Sextet: awarded by team membership, so solo players DO earn this even though
+  // they never earn Arrow VP (positive or negative) — sextet bonuses are a separate category.
+  scores.forEach((s,i) => { s.kingSextetBonus = 0; });
+  if (G.bzfScoring) {
+    players.forEach((p,i) => {
+      const kingSextetCount = p.tableau.filter(m=>isKingSextet(m)).length;
+      if(kingSextetCount > 0) {
+        scores.forEach((s,j) => {
+          if(players[j].team === p.team) s.kingSextetBonus += kingSextetCount * 60;
         });
       }
     });
@@ -1567,7 +1617,7 @@ function scoreHand(players) {
 
   // Total
   scores.forEach(s => {
-    s.total = s.arrowVP + s.skullVP + s.tpVP + s.completedBonus + s.lockedBonus + s.skullSextetBonus + s.handPenalty + s.goOutBonus + s.ginBonus + s.bidBonus + s.teamOutBonus;
+    s.total = s.starVP + s.arrowVP + s.skullVP + s.tpVP + s.completedBonus + s.lockedBonus + s.skullSextetBonus + s.kingSextetBonus + s.handPenalty + s.goOutBonus + s.ginBonus + s.bidBonus + s.teamOutBonus;
   });
 
   return scores;
@@ -1970,10 +2020,17 @@ function netClientData(d){
     if (prevG && myTurn) {
       const myHand = (G.players.find(p=>p.seat===NET.mySeat)||{}).hand || [];
       const reResolve = ids => myHand.filter(c=>ids.includes(c.id));
-      // selectedCards is the one exception: while displaceMode is active, the host's
-      // broadcast carries the authoritative force-selected Joker, which must win over
-      // whatever we had selected locally before sending the displace intent.
-      if (!G.displaceMode) {
+      // selectedCards: while displaceMode is active, the host's broadcast carries the
+      // authoritative force-selected Joker — that must always be present. But the player
+      // still needs to tap ADDITIONAL cards locally to build a meld around it, and those
+      // taps must survive the next snapshot too, or every heartbeat wipes them out mid-pick.
+      // So merge the host's forced selection with whatever we'd already tapped locally,
+      // rather than letting one fully override the other.
+      if (G.displaceMode) {
+        const hostIds = (G.selectedCards||[]).map(c=>c.id);
+        const localIds = (prevG.selectedCards||[]).map(c=>c.id);
+        G.selectedCards = reResolve([...new Set([...hostIds, ...localIds])]);
+      } else {
         G.selectedCards = reResolve((prevG.selectedCards||[]).map(c=>c.id));
       }
       // Layoff/displace navigation state is always purely local — the host never sets
@@ -2121,7 +2178,11 @@ function netExecuteAsSeat(seat, fn){
   const captured = [];
   setStatus = (msg)=>{ if (msg) captured.push(msg); };
   try{ fn(); }
-  catch(e){ console.error('netApplyIntent error:', e); captured.push('Move failed on the host — try again.'); }
+  catch(e){
+    console.error('netApplyIntent error:', e);
+    glog('⚠ Host error handling a remote action: '+(e && e.message ? e.message : e), 'bad');
+    captured.push('Move failed on the host — try again.');
+  }
   finally{ setStatus = realSetStatus; }
   if (captured.length) netSendReject(seat, captured.join(' '));
 }
@@ -2271,7 +2332,7 @@ function dealNewHand(firstHand) {
   G.layoffTargets = [];
   
   // Clear hands, tableaux, and per-hand flags
-  G.players.forEach(p => { p.hand=[]; p.tableau=[]; p.hadTurnThisHand=false; p.hadMoreThanOneTurn=false; p.ginEligible=false; p.goOutPosition=null; p.goOutIsGin=false; p.bid=null; p.hasBid=false; });
+  G.players.forEach(p => { p.hand=[]; p.tableau=[]; p.hadTurnThisHand=false; p.hadMoreThanOneTurn=false; p.ginEligible=false; p.goOutPosition=null; p.goOutIsGin=false; p.bid=null; p.hasBid=false; p.handStarVP=0; });
   
   // Deal 13 cards each
   for(let i=0;i<13;i++) {
@@ -2449,11 +2510,9 @@ function triggerGoOut(outPlayerSeat, isGin) {
   if(totalOuts >= needed) {
     // Enough outs but some haven't had their first turn
     const names = stillWaiting.map(p=>p.name).join(', ');
-    setStatus(outPlayer.name+' went out! '+names+' still need their first turn.');
     glog(names+' still need their first turn this hand.', 'info');
   } else {
     const remaining = needed - totalOuts;
-    setStatus(outPlayer.name+' went out! Need '+remaining+' more out'+(remaining>1?'s':'')+' to end the hand.');
     glog('Hand continues — '+remaining+' more player'+(remaining>1?'s':'')+' need to go out.', 'info');
   }
 
@@ -3348,15 +3407,15 @@ function combinations(arr, k) {
 }
 
 function aiPickDiscard(hand) {
-  // Discard: prefer skull, then TC/joker if can't use, then highest rank non-VP card
-  const skulls = hand.filter(c=>c.isSkull);
+  // Discard: prefer skull (costliest first, e.g. Knight over 7/9), then TC/joker if can't use, then highest rank non-VP card
+  const skulls = hand.filter(c=>c.isSkull).sort((a,b)=>a.penaltyVP-b.penaltyVP);
   if(skulls.length) return skulls[0];
   const tc = hand.filter(c=>c.isTopCat);
   if(tc.length) return tc[0];
   // Discard highest rank non-Star/Arrow card
   const sorted = [...hand].sort((a,b)=>{
-    const aScore = a.isStar?-10:a.isArrow?-5:a.rank;
-    const bScore = b.isStar?-10:b.isArrow?-5:b.rank;
+    const aScore = a.isStar?-10:a.isArrow?(a.rank===5?-8:-5):a.rank;
+    const bScore = b.isStar?-10:b.isArrow?(b.rank===5?-8:-5):b.rank;
     return bScore-aScore;
   });
   return sorted[0];
@@ -3371,7 +3430,7 @@ function showScoreScreen(scores) {
   document.getElementById('score-title').textContent = title;
 
   const thead = `<thead><tr>
-    <th>Player</th><th>Bid</th><th>Out</th><th>↑ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
+    <th>Player</th><th>Bid</th><th>Out</th><th>★ Star</th><th>▲ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>👑 Kings</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
   </tr></thead>`;
 
   const posLabel = {1:'1st 🥇', 2:'2nd 🥈', 3:'3rd 🥉'};
@@ -3383,11 +3442,13 @@ function showScoreScreen(scores) {
       <td style="color:${teamColorLight(p)};font-weight:700">${p.name}</td>
       <td style="color:${p.bid==='laoda'?'var(--gold)':p.bid==='pinyin'?'var(--arrow)':'var(--text3)'}">${bidLabel[p.bid]||'—'}</td>
       <td>${p.goOutPosition ? (posLabel[p.goOutPosition]||p.goOutPosition) : '—'}</td>
-      <td style="color:var(--arrow)">${s.arrowVP>0?'+'+s.arrowVP:'—'}</td>
+      <td style="color:var(--gold)">${s.starVP>0?'+'+s.starVP:'—'}</td>
+      <td style="color:var(--arrow)">${s.arrowVP!==0?(s.arrowVP>0?'+':'')+s.arrowVP:'—'}</td>
       <td style="color:var(--skull)">${s.skullVP<0?s.skullVP:'—'}</td>
       <td style="color:var(--gold)">${s.tpVP!==0?(s.tpVP>0?'+':'')+s.tpVP:'—'}</td>
       <td style="color:var(--gold)">${s.completedBonus>0?'+'+s.completedBonus:'—'}</td>
       <td style="color:var(--gold)">${s.skullSextetBonus>0?'+'+s.skullSextetBonus+' 💀':'—'}</td>
+      <td style="color:var(--gold)">${s.kingSextetBonus>0?'+'+s.kingSextetBonus+' 👑':'—'}</td>
       <td style="color:var(--gold)">${s.lockedBonus>0?'+25 🏆':'—'}</td>
       <td style="color:var(--gold)">${s.goOutBonus>0?'+'+s.goOutBonus:'—'}</td>
       <td style="color:var(--gold)">${s.teamOutBonus>0?'+'+s.teamOutBonus+' 🤝':'—'}</td>
@@ -3420,23 +3481,25 @@ function showWinScreen(winners) {
   const bidLabel = {laoda:'LAODA',pinyin:'PINYIN'};
 
   const thead = `<thead><tr>
-    <th>Player</th><th>Team</th><th>Bid</th><th>Out</th><th>↑ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
+    <th>Player</th><th>Team</th><th>Bid</th><th>Out</th><th>★ Star</th><th>▲ Arrow</th><th>☠ Skull</th><th>TP</th><th>🔒 Locked</th><th>💀 Sextet</th><th>👑 Kings</th><th>🔒 Team</th><th>Out VP</th><th>Team Out</th><th>Bid VP</th><th>Gin</th><th>Penalty</th><th>This Hand</th><th>Total VP</th>
   </tr></thead>`;
 
-  const s = sorted.map(p=>p.handScore||{arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0});
+  const s = sorted.map(p=>p.handScore||{starVP:0,arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,kingSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0});
   const tbody = '<tbody>'+sorted.map((p,i)=>{
-    const hs = p.handScore||{arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0};
+    const hs = p.handScore||{starVP:0,arrowVP:0,tdVP:0,skullVP:0,completedBonus:0,skullSextetBonus:0,kingSextetBonus:0,lockedBonus:0,goOutBonus:0,teamOutBonus:0,bidBonus:0,ginBonus:0,handPenalty:0,total:0};
     const isWinner = winners.some(w=>w.seat===p.seat);
     return `<tr class="${isWinner?'winner':''}">
       <td style="color:${teamColor(p)};font-weight:900">${p.name}${p.isHuman?' ★':''}</td>
       <td><span class="chip-team ${teamBadgeClass(p)}">${teamBadgeLabel(p)}</span></td>
       <td style="color:${p.bid==='laoda'?'var(--gold)':p.bid==='pinyin'?'var(--arrow)':'var(--text3)'}">${bidLabel[p.bid]||'—'}</td>
       <td>${p.goOutPosition?(posLabel[p.goOutPosition]||p.goOutPosition):'—'}</td>
-      <td style="color:var(--arrow)">${hs.arrowVP>0?'+'+hs.arrowVP:'—'}</td>
+      <td style="color:var(--gold)">${hs.starVP>0?'+'+hs.starVP:'—'}</td>
+      <td style="color:var(--arrow)">${hs.arrowVP!==0?(hs.arrowVP>0?'+':'')+hs.arrowVP:'—'}</td>
       <td style="color:var(--skull)">${hs.skullVP<0?hs.skullVP:'—'}</td>
       <td style="color:var(--gold)">${hs.tpVP!==0?(hs.tpVP>0?'+':'')+hs.tpVP:'—'}</td>
       <td style="color:var(--gold)">${hs.completedBonus>0?'+'+hs.completedBonus:'—'}</td>
       <td style="color:var(--gold)">${hs.skullSextetBonus>0?'+'+hs.skullSextetBonus+' 💀':'—'}</td>
+      <td style="color:var(--gold)">${hs.kingSextetBonus>0?'+'+hs.kingSextetBonus+' 👑':'—'}</td>
       <td style="color:var(--gold)">${hs.lockedBonus>0?'+25 🏆':'—'}</td>
       <td style="color:var(--gold)">${hs.goOutBonus>0?'+'+hs.goOutBonus:'—'}</td>
       <td style="color:var(--gold)">${hs.teamOutBonus>0?'+'+hs.teamOutBonus+' 🤝':'—'}</td>
@@ -3718,10 +3781,13 @@ function makeHandCard(card) {
   
   // Tooltip
   const tipLines=[card.name];
-  if(card.isTopDog) tipLines.push('Top Dog — Arrow +5↑\nMeld ownership → lowest VP player');
-  else if(card.isTopCat) tipLines.push('Top Cat — −5 VP\nMeld ownership → lowest/highest VP');
+  if(card.isTopDog) tipLines.push('Top Dog — Arrow ▲+5\nMeld ownership → lowest VP player');
+  else if(card.isTopCat) tipLines.push('Top Cat — Star ★+5 (immediate), Skull ☠-5\nDoes not trigger meld ownership transfer');
   else if(card.isStar) tipLines.push('Star ★ — scores 5 VP in Tableau');
-  else if(card.isArrow) tipLines.push('Arrow ↑ — team scores 5 VP each');
+  else if(card.rank===5) tipLines.push('Arrow ▲▲ — team scores 10 VP (double)');
+  else if(card.rank===14) tipLines.push('Arrow ▼▼ — team loses 10 VP (double negative); exempt if part of a locked King Sextet');
+  else if(card.isArrow) tipLines.push('Arrow ▲ — team scores 5 VP each');
+  else if(card.rank===12) tipLines.push('Skull ☠☠ — excess Skull penalty −10 VP (double)\nPenalty if held in hand: −10 VP\nExempt if part of a locked Skull Sextet');
   else if(card.isSkull) tipLines.push('Skull ☠ — excess Skull penalty −5 VP\nPenalty if held in hand: −5 VP');
   inner.title=tipLines.join('\n');
   
