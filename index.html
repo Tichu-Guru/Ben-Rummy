@@ -749,6 +749,29 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 .ma-card-name{font-family:'Cinzel',serif;font-size:0.82rem;font-weight:700;color:#f0e8ff;text-align:center;}
 .ma-card-desc{font-size:0.62rem;color:#b8a8d8;text-align:center;line-height:1.3;flex:1;}
 
+/* In-game Major Arcana strips: your held cards + shared Auction Tableau mini-view */
+#my-majors-area, #ma-auction-mini-area{
+  background:var(--panel);border-top:1px solid var(--border);
+  padding:8px 12px 10px;
+}
+#my-majors-strip, #ma-auction-mini-strip{
+  display:flex;gap:6px;overflow-x:auto;padding:4px 0 2px;min-height:56px;
+}
+.ma-mini-card{
+  flex-shrink:0;
+  background:linear-gradient(160deg,#3a2a5c,#241a3e);
+  border:1.5px solid #7a5cc0;border-radius:7px;
+  width:52px;min-height:52px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding:4px 2px;cursor:default;
+}
+.ma-mini-numeral{font-family:'Cinzel',serif;font-size:0.6rem;color:#c8a8f0;}
+.ma-mini-name{font-family:'Cinzel',serif;font-size:0.56rem;font-weight:700;color:#f0e8ff;text-align:center;line-height:1.15;}
+.ma-mini-empty{font-size:0.75rem;color:var(--text3);font-style:italic;padding:14px 4px;}
+.ma-mini-activatable{cursor:pointer;border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.25);}
+.ma-mini-activatable:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(201,168,76,0.4);}
+.ma-mini-inactive{opacity:0.5;}
+
 /* Setup player slots */
 .player-slot{
   display:flex;align-items:center;gap:8px;
@@ -1092,7 +1115,7 @@ body.net-client #action-bar{padding-bottom:38px;}
     <!-- Human hand -->
     <div id="human-hand-area">
       <div class="hand-label">
-        YOUR HAND
+        <span id="my-hand-label-name">YOUR HAND</span>
         <span class="hand-count" id="hand-count">0</span>
         <span id="ai-thinking-indicator"></span>
       </div>
@@ -1121,6 +1144,18 @@ body.net-client #action-bar{padding-bottom:38px;}
       <button class="action-btn btn-displace" id="btn-displace" onclick="humanDisplace()">DISPLACE</button>
       <button class="action-btn btn-discard" id="btn-discard" onclick="humanDiscard()">DISCARD</button>
       <div id="meld-preview"></div>
+    </div>
+
+    <!-- Your held (drafted, unactivated) Major Arcana cards -->
+    <div id="my-majors-area" style="display:none;">
+      <div class="strip-label">YOUR MAJOR ARCANA</div>
+      <div id="my-majors-strip"></div>
+    </div>
+
+    <!-- Shared Major Arcana Auction Tableau, mini view, always visible when MA is on -->
+    <div id="ma-auction-mini-area" style="display:none;">
+      <div class="strip-label">MAJOR AUCTION TABLEAU</div>
+      <div id="ma-auction-mini-strip"></div>
     </div>
 
   </div>
@@ -1361,7 +1396,7 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v60';
+const GAME_VERSION = 'v65';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
@@ -2748,6 +2783,116 @@ function consumeTeamMajor(player, card) {
   G.maDeck = shuffle(G.maDeck);
 }
 
+// ══════════════════════════════════════════════
+// MAJOR ARCANA — During Turn Activation Framework
+// One activation per player per turn. Consuming a card reshuffles it into
+// the Major Arcana deck, EXCEPT Transfiguration, which goes face-up onto
+// the Auction Table instead.
+// ══════════════════════════════════════════════
+function consumeDuringTurnMajor(player, card) {
+  const idx = player.arcana.findIndex(c=>c.maId===card.maId);
+  if(idx>=0) player.arcana.splice(idx,1);
+  if(card.typeId === 'transfiguration') {
+    G.maAuctionTable.push(card);
+  } else {
+    G.maDeck.push(card);
+    G.maDeck = shuffle(G.maDeck);
+  }
+}
+
+function canActivateMajors(player) {
+  if(!G.majorArcana) return false;
+  if(G.majorActivatedThisTurn) return false;
+  if(!player.isHuman || netIsRemoteControlled(player.seat)) return false;
+  if(currentPlayer().seat !== player.seat) return false;
+  if(G.phase !== 'act') return false;
+  return player.arcana.some(c=>c.timing==='duringturn');
+}
+
+// Config for the 9 cards that grant immediate +5 team Arrow VP per qualifying
+// meld in the ACTIVATOR's own Tableau (suit-keyed or rank-keyed).
+const MAJOR_TEAM_ARROW_CARDS = {
+  magus:     { suit:'Diamonds' },
+  priestess: { suit:'Hearts' },
+  empress:   { suit:'Swords' },
+  emperor:   { suit:'Coins' },
+  moon:      { suit:'Moon' },
+  sun:       { suit:'Sun' },
+  chariot:   { ranks:[2,3,4] },
+  strength:  { ranks:[5,6,7] },
+  sage:      { ranks:[8,9,10] },
+};
+
+function countQualifyingMelds(player, filter) {
+  let count = 0;
+  for(const m of player.tableau) {
+    const match = m.cards.some(c => filter.suit ? c.suit===filter.suit : filter.ranks.includes(c.rank));
+    if(match) count++;
+  }
+  return count;
+}
+
+// Returns {ok:true} if the card can be meaningfully activated right now, or
+// {ok:false, reason:'...'} explaining why not. Cards with no entry here are
+// treated as always-activatable (effect logic not yet implemented).
+function checkMajorFeasibility(player, card) {
+  const teamArrowCfg = MAJOR_TEAM_ARROW_CARDS[card.typeId];
+  if(teamArrowCfg) {
+    if(player.isSolo) return { ok:false, reason:'Solo players are excluded from this card\u2019s team Arrow VP bonus.' };
+    const count = countQualifyingMelds(player, teamArrowCfg);
+    if(count === 0) return { ok:false, reason:'You have no meld in your Tableau that qualifies for this card right now.' };
+    return { ok:true, count };
+  }
+  return { ok:true };
+}
+
+function onMajorCardClick(maId) {
+  const player = getMyPlayerForUI();
+  if(!player || !canActivateMajors(player)) return;
+  const card = player.arcana.find(c=>c.maId===maId);
+  if(!card || card.timing!=='duringturn') return;
+
+  const feas = checkMajorFeasibility(player, card);
+  if(!feas.ok) {
+    showModal(
+      'Can\u2019t Activate '+card.name,
+      '<b>'+card.name+' ('+card.numeral+')</b><br>'+card.desc+'<br><br><i>'+feas.reason+'</i>',
+      [ { label:'OK', fn: ()=>{} } ]
+    );
+    return;
+  }
+
+  showModal(
+    'Activate '+card.name+'?',
+    '<b>'+card.name+' ('+card.numeral+')</b><br>'+card.desc+'<br><br>This uses your one Major Arcana activation for this turn.',
+    [
+      { label:'Activate', fn: ()=>activateDuringTurnMajor(player, card) },
+      { label:'Cancel', fn: ()=>{} }
+    ]
+  );
+}
+
+function activateDuringTurnMajor(player, card) {
+  G.majorActivatedThisTurn = true;
+
+  const teamArrowCfg = MAJOR_TEAM_ARROW_CARDS[card.typeId];
+  if(teamArrowCfg) {
+    const count = countQualifyingMelds(player, teamArrowCfg);
+    const bonus = count * 5;
+    const teammates = G.players.filter(p=>p.team===player.team);
+    teammates.forEach(p => { p.totalVP += bonus; });
+    consumeDuringTurnMajor(player, card);
+    glog(player.name+' activates '+card.name+' — +'+bonus+' Arrow VP to the team ('+count+' qualifying meld'+(count===1?'':'s')+')!','good');
+    renderAll();
+    return;
+  }
+
+  // Phase 5 (remaining cards): real effect logic pending.
+  consumeDuringTurnMajor(player, card);
+  glog(player.name+' activates '+card.name+'! (Effect not yet implemented)','imp');
+  renderAll();
+}
+
 function resolveTeamSelectionMajors(allPlayers, callback) {
   if(!G.majorArcana || G.freezeTeams) { callback([]); return; }
   G.teamMajorGroups = []; // array of {team, members:[]}
@@ -2979,6 +3124,7 @@ function dealNewHandContinue(firstHand) {
   }
   
   G.phase = 'draw';
+  G.majorActivatedThisTurn = false;
   G.outSeat = undefined;
   G.outIsGin = false;
   G.mustUseCardId = null;
@@ -3053,6 +3199,7 @@ function advanceTurn() {
 
   G.phase = 'draw';
   G.selectedCards = [];
+  G.majorActivatedThisTurn = false;
   G.displaceMode = false;
   G.displaceJoker = null;
   G.displaceFromMeld = null;
@@ -4248,14 +4395,19 @@ function renderAll() {
   renderTableaux();
   renderHumanHand();
   renderDiscardPile();
+  renderMyMajors();
+  renderMAAuctionMini();
   updateActionButtons();
   document.getElementById('deck-count').textContent='Deck: '+G.deck.length;
   document.getElementById('hand-goal').textContent='Target: '+G.targetVP+' VP — Hand '+G.handNum;
-  // Hide bid bar unless it's the current human player's turn and they haven't bid yet
+  // Hide bid bar unless it's the current human player's turn, they haven't bid yet,
+  // AND this is that player's own device (not another connected client watching)
   const bar = document.getElementById('bid-bar');
   if(bar) {
     const cp = currentPlayer();
-    const showBid = cp.isHuman && !cp.hasBid && G.phase === 'act' && !netIsRemoteControlled(cp.seat);
+    const myPlayer = getMyPlayerForUI();
+    const showBid = cp.isHuman && !cp.hasBid && G.phase === 'act' && !netIsRemoteControlled(cp.seat)
+      && myPlayer && cp.seat === myPlayer.seat;
     bar.style.display = showBid ? 'block' : 'none';
     if(showBid) showTutorialTip('firstBid');
   }
@@ -4283,16 +4435,18 @@ function renderTableaux() {
   aiArea.innerHTML='';
   humanArea.innerHTML='';
 
+  const myPlayer = getMyPlayerForUI();
   G.players.forEach((p,i)=>{
+    const isMe = myPlayer && p.seat === myPlayer.seat;
     const div=document.createElement('div');
-    div.className='player-tableau'+(p.isHuman?' human-tableau':'')+(p.seat===G.currentSeat?' active-tableau':'');
+    div.className='player-tableau'+(isMe?' human-tableau':'')+(p.seat===G.currentSeat?' active-tableau':'');
 
     const header=document.createElement('div');
     header.className='tab-header';
     const nameEl=document.createElement('span');
-    nameEl.className='tab-name'+(p.isHuman?' human':'');
+    nameEl.className='tab-name'+(isMe?' human':'');
     nameEl.style.color = teamColor(p);
-    nameEl.textContent=p.name+(p.seat===G.currentSeat?' ◄':'')+(!p.isHuman?'':' (You)');
+    nameEl.textContent=p.name+(p.seat===G.currentSeat?' ◄':'')+(isMe?' (You)':'');
     const teamBadge=document.createElement('span');
     teamBadge.className='tab-team-badge '+teamBadgeClass(p);
     teamBadge.textContent=teamBadgeLabel(p);
@@ -4319,9 +4473,8 @@ function renderTableaux() {
     }
     div.appendChild(meldsRow);
 
-    // Current human player's tableau goes in the human area; all others go in AI area
-    const isCurrentHuman = currentPlayer().isHuman && p.seat === currentPlayer().seat;
-    if(isCurrentHuman) humanArea.appendChild(div);
+    // Local viewer's own tableau goes in the human area; all others go in AI area
+    if(isMe) humanArea.appendChild(div);
     else aiArea.appendChild(div);
   });
 }
@@ -4441,6 +4594,8 @@ function renderHumanHand() {
   const container=document.getElementById('human-hand');
   container.innerHTML='';
   document.getElementById('hand-count').textContent=player.hand.length;
+  const labelEl = document.getElementById('my-hand-label-name');
+  if(labelEl) labelEl.textContent = (player.name.toUpperCase())+"'S HAND";
   
   // Only render interactive cards during this player's turn
   const isMyTurn = cp.isHuman && cp.seat === player.seat;
@@ -4510,6 +4665,58 @@ function makeHandCard(card) {
   
   wrap.appendChild(inner);
   return wrap;
+}
+
+// Same player-selection pattern as renderHumanHand — always the viewer's own seat
+function getMyPlayerForUI() {
+  const cp = currentPlayer();
+  if (NET.mode==='join' && NET.inGame && NET.mySeat!=null) {
+    return G.players.find(p=>p.seat===NET.mySeat);
+  } else if (NET.mode==='host' && NET.started) {
+    return G.players.find(p=>p.seat===0);
+  }
+  return cp.isHuman ? cp : G.players.filter(p=>p.isHuman).sort((a,b)=>a.seat-b.seat)[0];
+}
+
+function renderMyMajors() {
+  const area = document.getElementById('my-majors-area');
+  if(!area) return;
+  if(!G.majorArcana) { area.style.display='none'; return; }
+  const player = getMyPlayerForUI();
+  area.style.display = 'block';
+  const strip = document.getElementById('my-majors-strip');
+  if(!player || !player.arcana || player.arcana.length===0) {
+    strip.innerHTML = '<div class="ma-mini-empty">No Major Arcana cards drafted yet</div>';
+    return;
+  }
+  const canAct = canActivateMajors(player);
+  strip.innerHTML = player.arcana.map(card => {
+    const activatable = canAct && card.timing==='duringturn';
+    const cls = 'ma-mini-card' + (activatable ? ' ma-mini-activatable' : (card.timing==='duringturn' ? ' ma-mini-inactive' : ''));
+    const click = activatable ? `onclick="onMajorCardClick('${card.maId}')"` : '';
+    const hint = card.timing==='predeal' ? ' (Pre-Deal — activates at hand start, not now)' : '';
+    return `<div class="${cls}" ${click} title="${card.name}: ${card.desc.replace(/"/g,'&quot;')}${hint}">
+      <div class="ma-mini-numeral">${card.numeral}</div>
+      <div class="ma-mini-name">${card.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMAAuctionMini() {
+  const area = document.getElementById('ma-auction-mini-area');
+  if(!area) return;
+  if(!G.majorArcana) { area.style.display='none'; return; }
+  area.style.display = 'block';
+  const strip = document.getElementById('ma-auction-mini-strip');
+  if(!G.maAuctionTable || G.maAuctionTable.length===0) {
+    strip.innerHTML = '<div class="ma-mini-empty">Auction Tableau is empty</div>';
+    return;
+  }
+  strip.innerHTML = G.maAuctionTable.map(card => `
+    <div class="ma-mini-card" title="${card.name}: ${card.desc.replace(/"/g,'&quot;')}">
+      <div class="ma-mini-numeral">${card.numeral}</div>
+      <div class="ma-mini-name">${card.name}</div>
+    </div>`).join('');
 }
 
 function renderDiscardPile() {
