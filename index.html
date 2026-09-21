@@ -73,6 +73,7 @@ html{touch-action:manipulation;}
   --meld-h:86px;
   --dis-w:28px;
   --dis-h:44px;
+  --zoom-scale:1;
 }
 body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-height:100vh;min-height:100dvh;overflow-x:hidden;}
 
@@ -201,6 +202,7 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 .chip-team{font-size:0.62rem;padding:2px 6px;border-radius:10px;font-weight:700;}
 .chip-team.t1{background:rgba(26,90,170,0.15);color:#1a5aaa;}
 .chip-team.t2{background:rgba(170,32,24,0.15);color:#aa2018;}
+.chip-team.t3{background:rgba(26,120,56,0.15);color:#1a7838;}
 .chip-team.solo{background:rgba(184,150,10,0.18);color:#8a6a00;}
 
 #hand-goal{
@@ -302,6 +304,7 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 }
 .tab-team-badge.t1{background:rgba(26,90,170,0.2);color:#1a5aaa;border:1px solid rgba(26,90,170,0.5);}
 .tab-team-badge.t2{background:rgba(170,32,24,0.2);color:#aa2018;border:1px solid rgba(170,32,24,0.5);}
+.tab-team-badge.t3{background:rgba(26,120,56,0.2);color:#1a7838;border:1px solid rgba(26,120,56,0.5);}
 .tab-team-badge.solo{background:rgba(184,150,10,0.22);color:#8a6a00;border:1px solid rgba(184,150,10,0.55);}
 .tab-score-preview{
   margin-left:auto;font-size:0.6rem;color:var(--text2);
@@ -425,9 +428,9 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 }
 .bzf-meld-card .bzf-c-strip{width:var(--strip-w);}
 .bzf-meld-card .bzf-c-face{left:var(--strip-w);}
-.bzf-meld-card .bzf-c-strip-rank{font-size:0.44rem;}
-.bzf-meld-card .bzf-c-strip-suit{font-size:0.6rem;}
-.bzf-meld-card .bzf-c-strip-vp{font-size:0.36rem;}
+.bzf-meld-card .bzf-c-strip-rank{font-size:calc(0.44rem * var(--zoom-scale));}
+.bzf-meld-card .bzf-c-strip-suit{font-size:calc(0.6rem * var(--zoom-scale));}
+.bzf-meld-card .bzf-c-strip-vp{font-size:calc(0.36rem * var(--zoom-scale));}
 /* Discard sized */
 .bzf-dis-card{
   width:var(--dis-w);height:var(--dis-h);
@@ -453,16 +456,16 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
   display:flex;flex-direction:column;align-items:center;justify-content:space-between;
   padding:4px 0 5px;
 }
-.bzf-c-strip-rank{font-size:0.44rem;font-weight:900;color:#fff;line-height:1;font-family:'Cinzel',serif;flex:0 0 auto;}
-.bzf-c-strip-suit{font-size:0.6rem;color:rgba(255,255,255,0.95);line-height:1;flex:1 0 auto;display:flex;align-items:center;justify-content:center;}
-.bzf-c-strip-vp{font-size:0.42rem;font-weight:900;color:rgba(255,255,255,1);line-height:1;text-align:center;flex:0 0 auto;padding-bottom:1px;white-space:nowrap;}
+.bzf-c-strip-rank{font-size:calc(0.44rem * var(--zoom-scale));font-weight:900;color:#fff;line-height:1;font-family:'Cinzel',serif;flex:0 0 auto;}
+.bzf-c-strip-suit{font-size:calc(0.6rem * var(--zoom-scale));color:rgba(255,255,255,0.95);line-height:1;flex:1 0 auto;display:flex;align-items:center;justify-content:center;}
+.bzf-c-strip-vp{font-size:calc(0.42rem * var(--zoom-scale));font-weight:900;color:rgba(255,255,255,1);line-height:1;text-align:center;flex:0 0 auto;padding-bottom:1px;white-space:nowrap;}
 .bzf-c-face{
   position:absolute;top:0;left:var(--strip-w);right:0;bottom:0;
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 2px;
 }
-.bzf-c-big-rank{font-size:1.1rem;font-weight:900;line-height:1;font-family:'Cinzel',serif;}
-.bzf-c-big-suit{font-size:0.85rem;line-height:1;margin-top:1px;}
-.bzf-c-vp-small{font-size:0.42rem;margin-top:2px;font-weight:700;opacity:0.8;}
+.bzf-c-big-rank{font-size:calc(1.1rem * var(--zoom-scale));font-weight:900;line-height:1;font-family:'Cinzel',serif;}
+.bzf-c-big-suit{font-size:calc(0.85rem * var(--zoom-scale));line-height:1;margin-top:1px;}
+.bzf-c-vp-small{font-size:calc(0.42rem * var(--zoom-scale));margin-top:2px;font-weight:700;opacity:0.8;}
 
 /* Suit backgrounds */
 .bzf-sbg-Hearts{background:#f0f7ff;border-color:rgba(58,127,212,0.4);}
@@ -754,9 +757,15 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
   background:var(--panel);border-top:1px solid var(--border);
   padding:8px 12px 10px;
 }
-#my-majors-strip, #ma-auction-mini-strip{
+#ma-auction-mini-strip{
   display:flex;gap:6px;overflow-x:auto;padding:4px 0 2px;min-height:56px;
 }
+#my-majors-strip{
+  display:flex;flex-direction:column;gap:8px;padding:4px 0 2px;
+}
+.ma-player-row{display:flex;flex-direction:column;gap:3px;}
+.ma-player-row-name{font-family:'Cinzel',serif;font-size:0.7rem;font-weight:700;color:var(--text2);}
+.ma-player-row-cards{display:flex;gap:6px;overflow-x:auto;min-height:56px;}
 .ma-mini-card{
   flex-shrink:0;
   background:linear-gradient(160deg,#3a2a5c,#241a3e);
@@ -879,6 +888,37 @@ body.net-client #action-bar{padding-bottom:38px;}
   display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
 #help-btn:hover{background:rgba(138,106,16,0.15);}
+#menu-btn{
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:50%;
+  width:30px;height:30px;min-width:30px;
+  font-size:0.95rem;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  margin-left:4px;
+}
+#menu-btn:hover{background:rgba(138,106,16,0.1);color:var(--gold);}
+#sound-toggle-btn{
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:50%;
+  width:30px;height:30px;min-width:30px;
+  font-size:0.85rem;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  margin-right:4px;
+}
+#sound-toggle-btn:hover{background:rgba(138,106,16,0.1);}
+#tableau-zoom-control{
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:14px;
+  padding:2px 6px;margin-right:4px;
+}
+.zoom-btn{
+  background:none;border:none;width:20px;height:20px;
+  font-family:'Cinzel',serif;font-weight:900;font-size:0.95rem;color:var(--text2);
+  cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+}
+.zoom-btn:hover{background:rgba(138,106,16,0.15);color:var(--gold);}
+.zoom-btn:disabled{opacity:0.35;cursor:default;}
+.zoom-btn:disabled:hover{background:none;}
+#zoom-pct-label{font-size:0.68rem;color:var(--text3);min-width:30px;text-align:center;}
 #help-modal-overlay{
   display:none;position:fixed;inset:0;z-index:1200;
   background:rgba(20,15,35,0.55);
@@ -981,8 +1021,8 @@ body.net-client #action-bar{padding-bottom:38px;}
         <button class="btn-opt" onclick="selNP(3)">3P</button>
         <button class="btn-opt" onclick="selNP(4)">4P</button>
         <button class="btn-opt" onclick="selNP(5)">5P</button>
-        <button class="btn-opt sel" onclick="selNP(6)">6P</button>
-        <button class="btn-opt" onclick="selNP(7)">7P</button>
+        <button class="btn-opt" onclick="selNP(6)">6P</button>
+        <button class="btn-opt sel" onclick="selNP(7)">7P</button>
         <button class="btn-opt" onclick="selNP(8)">8P</button>
         <button class="btn-opt" onclick="selNP(9)">9P</button>
         <button class="btn-opt" onclick="selNP(10)">10P</button>
@@ -1084,7 +1124,14 @@ body.net-client #action-bar{padding-bottom:38px;}
   <div id="score-bar">
     <div id="score-chips"></div>
     <div id="hand-goal"></div>
+    <div id="tableau-zoom-control">
+      <button class="zoom-btn" onclick="zoomTableauOut()" title="Shrink tableaus">−</button>
+      <span id="zoom-pct-label">100%</span>
+      <button class="zoom-btn" onclick="zoomTableauIn()" title="Enlarge tableaus">+</button>
+    </div>
+    <button id="sound-toggle-btn" onclick="toggleSound()" title="Toggle sound effects">🔊</button>
     <button id="help-btn" onclick="openHelpModal()" title="How to Play">?</button>
+    <button id="menu-btn" onclick="openMenu()" title="Menu">☰</button>
   </div>
 
   <!-- Full-width stacked layout -->
@@ -1123,7 +1170,7 @@ body.net-client #action-bar{padding-bottom:38px;}
       <div id="bid-bar" style="display:none;">
         <div id="bid-bar-inner">
           <span class="bid-bar-label">DECLARE YOUR BID:</span>
-          <button class="bid-btn laoda" onclick="humanBid('laoda')">LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 team fail</span></button>
+          <button class="bid-btn laoda" onclick="humanBid('laoda')">LAODA<span class="bid-hint">+50 team if 1st / −50 team fail</span></button>
           <button class="bid-btn pinyin" onclick="humanBid('pinyin')">PINYIN<span class="bid-hint">+25 team if any out / −25 team fail</span></button>
           <button class="bid-btn pass" onclick="humanBid(null)">PASS</button>
         </div>
@@ -1146,9 +1193,9 @@ body.net-client #action-bar{padding-bottom:38px;}
       <div id="meld-preview"></div>
     </div>
 
-    <!-- Your held (drafted, unactivated) Major Arcana cards -->
+    <!-- Every player's held (drafted, unactivated) Major Arcana cards -->
     <div id="my-majors-area" style="display:none;">
-      <div class="strip-label">YOUR MAJOR ARCANA</div>
+      <div class="strip-label">SELECTED MAJOR ARCANA</div>
       <div id="my-majors-strip"></div>
     </div>
 
@@ -1341,6 +1388,320 @@ function toggleHelpSection(id) {
   const el = document.getElementById('help-sec-'+id);
   if (el) el.classList.toggle('open');
 }
+// ══════════════════════════════════════════════
+// TABLEAU ZOOM CONTROL — shrinks/enlarges actual card & meld dimensions
+// (not a visual transform:scale) so scroll distance through stacked
+// tableaus genuinely changes, not just how big things look on screen.
+// ══════════════════════════════════════════════
+const ZOOM_VARS = ['--card-w','--card-h','--strip-w','--meld-w','--meld-h'];
+let tableauZoomPct = 100;
+let tableauZoomBase = null; // captured once, lazily, from whatever the current breakpoint resolves to
+
+// ══════════════════════════════════════════════
+// SOUND EFFECTS — synthesized via Web Audio API (no external audio files,
+// keeps this a single self-contained HTML file). Plays a short card-snap
+// sound whenever a card is played into a meld or laid off.
+// ══════════════════════════════════════════════
+let soundEnabled = true;
+let audioCtx = null;
+function getAudioCtx() {
+  if (audioCtx) return audioCtx;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+  catch(e) { return null; }
+  return audioCtx;
+}
+function playCardSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+
+  // Layer 1: a soft low "thump" — the card body hitting the table
+  const thumpDur = 0.09;
+  const thumpBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*thumpDur), ctx.sampleRate);
+  const thumpData = thumpBuf.getChannelData(0);
+  for (let i=0;i<thumpData.length;i++) thumpData[i] = (Math.random()*2-1) * Math.pow(1-i/thumpData.length, 4);
+  const thumpSrc = ctx.createBufferSource();
+  thumpSrc.buffer = thumpBuf;
+  const thumpFilter = ctx.createBiquadFilter();
+  thumpFilter.type = 'lowpass';
+  thumpFilter.frequency.value = 300;
+  const thumpGain = ctx.createGain();
+  thumpGain.gain.setValueAtTime(0.6, now);
+  thumpGain.gain.exponentialRampToValueAtTime(0.001, now+thumpDur);
+  thumpSrc.connect(thumpFilter).connect(thumpGain).connect(ctx.destination);
+  thumpSrc.start(now);
+  thumpSrc.stop(now+thumpDur+0.01);
+
+  // Layer 2: a very brief high "snap" — the card edge/corner flick, arrives
+  // a hair after the thump starts, like a real card landing
+  const snapDelay = 0.012;
+  const snapDur = 0.03;
+  const snapBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*snapDur), ctx.sampleRate);
+  const snapData = snapBuf.getChannelData(0);
+  for (let i=0;i<snapData.length;i++) snapData[i] = (Math.random()*2-1) * Math.pow(1-i/snapData.length, 2);
+  const snapSrc = ctx.createBufferSource();
+  snapSrc.buffer = snapBuf;
+  const snapFilter = ctx.createBiquadFilter();
+  snapFilter.type = 'highpass';
+  snapFilter.frequency.value = 3500;
+  const snapGain = ctx.createGain();
+  snapGain.gain.setValueAtTime(0.3, now+snapDelay);
+  snapGain.gain.exponentialRampToValueAtTime(0.001, now+snapDelay+snapDur);
+  snapSrc.connect(snapFilter).connect(snapGain).connect(ctx.destination);
+  snapSrc.start(now+snapDelay);
+  snapSrc.stop(now+snapDelay+snapDur+0.01);
+}
+
+function playLockSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+
+  // A crisp mechanical "click" — the meld snapping into its locked strip form
+  const clickDur = 0.025;
+  const clickBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*clickDur), ctx.sampleRate);
+  const clickData = clickBuf.getChannelData(0);
+  for (let i=0;i<clickData.length;i++) clickData[i] = (Math.random()*2-1) * Math.pow(1-i/clickData.length, 2);
+  const clickSrc = ctx.createBufferSource();
+  clickSrc.buffer = clickBuf;
+  const clickFilter = ctx.createBiquadFilter();
+  clickFilter.type = 'highpass';
+  clickFilter.frequency.value = 4000;
+  const clickGain = ctx.createGain();
+  clickGain.gain.setValueAtTime(0.35, now);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, now+clickDur);
+  clickSrc.connect(clickFilter).connect(clickGain).connect(ctx.destination);
+  clickSrc.start(now);
+  clickSrc.stop(now+clickDur+0.01);
+
+  // Followed by a bright two-note ascending chime — a small reward cue
+  [[880, 0.03, 0.09], [1318.5, 0.09, 0.16]].forEach(([freq, start, end]) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, now+start);
+    g.gain.linearRampToValueAtTime(0.22, now+start+0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, now+end);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(now+start);
+    osc.stop(now+end+0.01);
+  });
+}
+
+function playGoOutSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+
+  // Two quick barks ("woof-woof"). Each layers: a harmonic-rich square-wave
+  // "voice" run through two formant-style bandpass filters (the resonant
+  // peaks that make a bark sound vocal rather than a plain tone), a sub
+  // oscillator for chest/body weight, and a very short noise burst at the
+  // very front for the breathy attack transient.
+  [0, 0.18].forEach(offset => {
+    const t = now + offset;
+    const dur = 0.13;
+
+    const voice = ctx.createOscillator();
+    voice.type = 'square';
+    voice.frequency.setValueAtTime(220, t);
+    voice.frequency.exponentialRampToValueAtTime(160, t + 0.05);
+    voice.frequency.exponentialRampToValueAtTime(105, t + dur);
+
+    const sub = ctx.createOscillator();
+    sub.type = 'sawtooth';
+    sub.frequency.setValueAtTime(110, t);
+    sub.frequency.exponentialRampToValueAtTime(75, t + dur);
+
+    const formant1 = ctx.createBiquadFilter();
+    formant1.type = 'bandpass';
+    formant1.frequency.value = 700;
+    formant1.Q.value = 4;
+    const formant2 = ctx.createBiquadFilter();
+    formant2.type = 'bandpass';
+    formant2.frequency.value = 1800;
+    formant2.Q.value = 3;
+
+    const voiceGain = ctx.createGain();
+    voiceGain.gain.setValueAtTime(0.001, t);
+    voiceGain.gain.exponentialRampToValueAtTime(0.55, t + 0.008); // sharp attack
+    voiceGain.gain.exponentialRampToValueAtTime(0.16, t + 0.045);
+    voiceGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+    const subGain = ctx.createGain();
+    subGain.gain.setValueAtTime(0.001, t);
+    subGain.gain.exponentialRampToValueAtTime(0.35, t + 0.008);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + dur*0.8);
+
+    voice.connect(formant1); voice.connect(formant2);
+    formant1.connect(voiceGain); formant2.connect(voiceGain);
+    voiceGain.connect(ctx.destination);
+    sub.connect(subGain); subGain.connect(ctx.destination);
+
+    voice.start(t); voice.stop(t + dur + 0.02);
+    sub.start(t); sub.stop(t + dur + 0.02);
+
+    const noiseDur = 0.04;
+    const noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*noiseDur), ctx.sampleRate);
+    const noiseData = noiseBuf.getChannelData(0);
+    for(let i=0;i<noiseData.length;i++) noiseData[i] = (Math.random()*2-1) * Math.pow(1-i/noiseData.length, 1.5);
+    const noiseSrc = ctx.createBufferSource();
+    noiseSrc.buffer = noiseBuf;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 1000;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.25, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + noiseDur);
+    noiseSrc.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+    noiseSrc.start(t);
+    noiseSrc.stop(t + noiseDur + 0.01);
+  });
+}
+
+function playMeowSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime;
+  const dur = 0.35;
+
+  // "Me-ow" pitch contour: quick rise, then a slower fall — plus a bandpass
+  // sweep tracking the pitch for a more vocal (less purely tonal) character.
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(500, now);
+  osc.frequency.exponentialRampToValueAtTime(760, now + 0.08);
+  osc.frequency.exponentialRampToValueAtTime(360, now + dur);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 3;
+  filter.frequency.setValueAtTime(1200, now);
+  filter.frequency.exponentialRampToValueAtTime(1800, now + 0.08);
+  filter.frequency.exponentialRampToValueAtTime(900, now + dur);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.001, now);
+  gain.gain.exponentialRampToValueAtTime(0.3, now + 0.05);
+  gain.gain.setValueAtTime(0.3, now + dur*0.55);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  osc.connect(filter).connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + dur + 0.02);
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('sound-toggle-btn');
+  if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+  if (soundEnabled) { const ctx = getAudioCtx(); if (ctx && ctx.state==='suspended') ctx.resume(); }
+}
+
+// ══════════════════════════════════════════════
+// MENU — game-management actions that need a confirm/cancel step, since
+// unlike Zoom/Sound/Help these change or discard actual game progress.
+// ══════════════════════════════════════════════
+function openMenu() {
+  showModal(
+    'Menu',
+    'Choose an option below, or Cancel to return to the game.',
+    [
+      { label:'Restart Hand', fn: confirmRestartHand },
+      { label:'Quit to Setup', fn: confirmQuitToSetup },
+      { label:'Cancel', fn: ()=>{} }
+    ]
+  );
+}
+
+function confirmRestartHand() {
+  if (!G.handStartSnapshot) {
+    showModal('Restart Hand', 'No hand-start snapshot is available to restart to.', [{ label:'OK', fn: ()=>{} }]);
+    return;
+  }
+  showModal(
+    'Restart This Hand?',
+    'This re-deals the current hand from scratch and fully reverts any VP already earned this hand (including Star VP and any Major Arcana bonuses). This cannot be undone.',
+    [
+      { label:'Restart Hand', fn: doRestartHand },
+      { label:'Cancel', fn: ()=>{} }
+    ]
+  );
+}
+
+function doRestartHand() {
+  const snap = G.handStartSnapshot;
+  if (!snap) return;
+  G = JSON.parse(JSON.stringify(snap));
+  G.handStartSnapshot = JSON.parse(JSON.stringify(snap)); // preserved for repeated restarts
+  glog('--- Hand restarted ---','imp');
+  renderAll();
+  if(currentPlayer().isHuman) {
+    if (netIsRemoteControlled(currentPlayer().seat)) {
+      renderAll();
+    } else {
+      showHandoff(currentPlayer());
+    }
+  } else {
+    setTimeout(()=>aiTakeTurn(), 600);
+  }
+}
+
+function confirmQuitToSetup() {
+  showModal(
+    'Quit to Setup?',
+    'This ends the current game and returns to the setup screen. All progress, including VP standings, will be lost. This cannot be undone.',
+    [
+      { label:'Quit to Setup', fn: newGame },
+      { label:'Cancel', fn: ()=>{} }
+    ]
+  );
+}
+
+function captureZoomBase() {
+  if (tableauZoomBase) return;
+  const cs = getComputedStyle(document.documentElement);
+  tableauZoomBase = {};
+  ZOOM_VARS.forEach(v => {
+    tableauZoomBase[v] = parseFloat(cs.getPropertyValue(v)) || 0;
+  });
+}
+
+function applyTableauZoom() {
+  captureZoomBase();
+  const factor = tableauZoomPct / 100;
+  ZOOM_VARS.forEach(v => {
+    document.documentElement.style.setProperty(v, (tableauZoomBase[v] * factor) + 'px');
+  });
+  document.documentElement.style.setProperty('--zoom-scale', factor);
+  const label = document.getElementById('zoom-pct-label');
+  if (label) label.textContent = tableauZoomPct + '%';
+  const btns = document.querySelectorAll('.zoom-btn');
+  if (btns.length === 2) {
+    btns[0].disabled = tableauZoomPct <= 50;
+    btns[1].disabled = tableauZoomPct >= 120;
+  }
+}
+
+function zoomTableauOut() {
+  tableauZoomPct = Math.max(50, tableauZoomPct - 10);
+  applyTableauZoom();
+}
+
+function zoomTableauIn() {
+  tableauZoomPct = Math.min(120, tableauZoomPct + 10);
+  applyTableauZoom();
+}
+
 function openHelpModal() {
   renderHelpSections();
   document.getElementById('help-modal-overlay').classList.add('open');
@@ -1396,11 +1757,11 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v65';
+const GAME_VERSION = 'v86';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
-let setupNP = 6;
+let setupNP = 7;
 let setupVP = 700;
 let setupBZFScoring = true;
 let setupAIDifficulty = 'medium';
@@ -1559,7 +1920,6 @@ function newCard(suit, rank, subtype) {
       if(this.rank===2) return '+5 +5';
       if(this.rank===9) return '+5 -5';
       if(this.rank===11) return '+5';
-      if(this.rank===5)  return '+10';
       if(this.rank===14) return '-10';
       if(this.rank===12) return '-10';
       if(this.isArrow)  return '+5';
@@ -1573,7 +1933,6 @@ function newCard(suit, rank, subtype) {
       if(this.rank===2) return '★▲';
       if(this.rank===9) return '★☢';
       if(this.rank===11) return '★';
-      if(this.rank===5)  return '▲▲';
       if(this.rank===14) return '▼▼';
       if(this.rank===12) return '☢☢';
       if(this.isArrow)  return '▲';
@@ -1700,9 +2059,15 @@ function awardCompletionBonus(meld, wasComplete) {
 // BZF mode: award immediate Star VP to the player who played those cards.
 // Play Rummy mode: Star/Arrow/Radioactive/TP are off — Jokers score +10 immediate instead.
 function awardStarVP(cards, player) {
+  // A card picked up directly from the discard pile (the exact must-use card)
+  // never scores Star/Joker-immediate VP — only cards that genuinely came
+  // from the player's hand do. Extras from a multi-card discard pickup, or
+  // this same card played in a later turn, are unaffected since this only
+  // ever excludes the one specific card id.
+  const eligible = cards.filter(c => c.id !== G.mustUseCardId);
   if (!G.bzfScoring) {
     let vp = 0;
-    for(const c of cards) if(c.isJoker) vp += 10;
+    for(const c of eligible) if(c.isJoker) vp += 10;
     if(vp > 0) {
       player.totalVP += vp;
       player.handStarVP = (player.handStarVP||0) + vp;
@@ -1711,7 +2076,7 @@ function awardStarVP(cards, player) {
     return;
   }
   let vp = 0;
-  for(const c of cards) {
+  for(const c of eligible) {
     if(c.rank === 1) vp += 10;       // Ace = +10★
     else if(c.rank === 2) vp += 5;   // 2 = +5★
     else if(c.rank === 9) vp += 5;   // 9 = +5★ (dual card)
@@ -1787,11 +2152,17 @@ function getMeldJoker(meld) {
 // SCORING
 // ══════════════════════════════════════════════
 function scoreMeld(meld) {
-  // Used for TD ownership transfer direction only
+  // Used for TD ownership transfer direction only — reflects the meld's net
+  // Arrow/Radioactive/TP value if left as-is (Star VP already paid out
+  // immediately when played, so it doesn't factor into who should own this).
   let vp = 0;
   for(const c of meld.cards) {
-    if(c.isTP) vp += c.tpValue;   // TD +5, TC -5, rank 4/10/Q positive
-    else if(c.isSkull) vp -= 5;
+    if(c.isTP) vp += c.tpValue;
+    if(c.isArrow) {
+      if(c.rank===14) vp -= 10;  // King: double negative
+      else vp += 5;              // rank 2, 5, 8, or TD
+    }
+    if(c.isSkull) vp -= (c.rank===12 ? 10 : 5); // Knight is double
   }
   return vp;
 }
@@ -1818,11 +2189,10 @@ function scoreHand(players) {
       const kingSextet = isKingSextet(m);
       for(const c of m.cards) {
         if (G.bzfScoring) {
-          // Arrow: rank 2 (+1 unit), rank 5 (+2 units, double), King (-2 units, double-negative,
+          // Arrow: rank 2, 5, 8 (+1 unit each), King (-2 units, double-negative,
           // exempt if part of a locked King Sextet), TD Joker (+1 unit)
           if(c.isArrow) {
-            if(c.rank===5) arrowCount += 2;
-            else if(c.rank===14) { if(!kingSextet) arrowCount -= 2; }
+            if(c.rank===14) { if(!kingSextet) arrowCount -= 2; }
             else arrowCount += 1;
           }
           // Skull — only penalizes if player went out; Knight (rank 12) is double
@@ -1866,23 +2236,29 @@ function scoreHand(players) {
           const ps = scores[players.indexOf(p)];
           return sum + (ps ? ps.arrowCount : 0);
         }, 0);
-        scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = totalArrows * 5; });
+        // arrowVPMultiplier is set >1 by Lovers/Pan (2P: individual effect;
+        // 3-4P: whole Blue Team; 5-10P: the newly-formed colored team) — read
+        // via Math.max since every member of an affected team shares it.
+        const multiplier = Math.max(...teamPlayers.map(p=>p.arrowVPMultiplier||1));
+        scores.forEach((s,i) => { if(players[i].team===team) s.arrowVP = totalArrows * 5 * multiplier; });
       }
     });
   } else {
     scores.forEach(s => { s.arrowVP = 0; });
   }
 
-  // TP pool: every TP card NOT in a tableau — still in hand, in the discard pile, or undrawn
-  // in the deck — is pooled (BZF mode only). TP cards already played into a meld score directly
-  // to their owner above and are excluded here. The entire pool goes to the 1st-out player's team:
-  // if they're solo, they get all of it; if on a team, it splits evenly across that team's
-  // members (floor division), with any remainder going specifically to the 1st-out player.
+  // TP pool: every TP card NOT in a tableau — still in a player's hand, or in
+  // the discard pile — is pooled (BZF mode only). TP cards still undrawn in
+  // the deck are NOT counted, since they never entered anyone's hand or the
+  // discard pile this hand. TP cards already played into a meld score
+  // directly to their owner above and are excluded here too. The entire pool
+  // goes to the 1st-out player's team: if they're solo, they get all of it;
+  // if on a team, it splits evenly across that team's members (floor
+  // division), with any remainder going specifically to the 1st-out player.
   if (G.bzfScoring) {
     const discardTPPool = G.discardPile.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0);
-    const deckTPPool = G.deck.reduce((s,c) => s + (c.isTP ? c.tpValue : 0), 0);
     const handTPPoolTotal = scores.reduce((s,sc) => s + sc.handTPPool, 0);
-    const totalTPPool = handTPPoolTotal + discardTPPool + deckTPPool;
+    const totalTPPool = handTPPoolTotal + discardTPPool;
     if(totalTPPool !== 0) {
       const firstOut = players.find(p=>p.goOutPosition===1);
       if(firstOut) {
@@ -1955,15 +2331,21 @@ function scoreHand(players) {
     else if(outCount >= 2) s.teamOutBonus = 50 * mult;
   });
 
-  // Go-out position bonuses (×mult)
-  const posVP = {1:40*mult, 2:30*mult, 3:20*mult};
+  // Go-out position bonuses (×mult). Gin doubles the position bonus instead
+  // of adding a flat amount on top.
+  const posVP = {1:50*mult, 2:40*mult, 3:30*mult};
   scores.forEach((s,i) => {
     s.goOutBonus = 0; s.ginBonus = 0; s.bidBonus = 0;
     const p = players[i];
     const pos = p.goOutPosition;
     if(pos) {
-      s.goOutBonus = posVP[pos] || 0;
-      if(p.goOutIsGin) s.ginBonus = 25 * mult;
+      const base = posVP[pos] || 0;
+      if(p.goOutIsGin) {
+        s.goOutBonus = base;
+        s.ginBonus = base; // doubles the total (base + base = 2x)
+      } else {
+        s.goOutBonus = base;
+      }
     }
   });
 
@@ -1977,16 +2359,18 @@ function scoreHand(players) {
     ['laoda','pinyin'].forEach(bidType => {
       const declarers = teamPlayers.filter(p=>p.bid===bidType);
       if(declarers.length === 0) return;
-      const bonus   = bidType==='laoda' ? 50 : 25;
-      const penalty = bidType==='laoda' ? -50 : -25;
-      // Pinyin now succeeds at ANY go-out position
-      const successPos = bidType==='laoda' ? [1,2] : [1,2,3];
+      // Laoda only succeeds by going out 1st; Pinyin succeeds at any go-out position
+      const successPos = bidType==='laoda' ? [1] : [1,2,3];
 
       declarers.forEach((p, di) => {
         const pi = players.indexOf(p);
         const pos = p.goOutPosition;
         const success = pos && successPos.includes(pos);
         const isFirst = di === 0;
+        // Pan's activator declares at double the normal stakes
+        const mult = p.bidDoubled ? 2 : 1;
+        const bonus   = (bidType==='laoda' ? 50 : 25) * mult;
+        const penalty = (bidType==='laoda' ? -50 : -25) * mult;
 
         if(success) {
           // Success: bonus to whole team
@@ -2020,12 +2404,22 @@ function scoreHand(players) {
 // ══════════════════════════════════════════════
 // Top-scoring players go solo: 3P→top 1, 4P→top 2, 5P/6P→top 3.
 // Remaining players share Team 1. 2P is unchanged (already 1v1).
+// Fixed solo-count table (no longer scales purely off n>=5 -> always 3).
 function getSoloCount(n) {
-  if(n <= 2) return 0;
-  if(n === 3) return 1;
-  if(n === 4) return 2;
-  return 3; // 5P+
+  const table = {3:1, 4:1, 5:1, 6:2, 7:3, 8:2, 9:3, 10:4};
+  return table[n] || 0;
 }
+// Number of colored non-solo teams: 3-4P share one team (Blue only);
+// 5-7P split into 2 (Red/Blue); 8-10P split into 3 (Red/Blue/Green).
+function getColorTeamCount(n) {
+  if(n <= 4) return 1;
+  if(n <= 7) return 2;
+  return 3;
+}
+const TEAM_BLUE = 1, TEAM_RED = 2, TEAM_GREEN = 3;
+// Order colored teams claim in, both for Lovers/Pan formation and for
+// auto-filling whoever's left afterward.
+const TEAM_COLOR_SEQUENCE = [TEAM_RED, TEAM_BLUE, TEAM_GREEN];
 
 function shuffleArray(arr) {
   const a = [...arr];
@@ -2051,60 +2445,69 @@ function interleaveGroups(groups) {
   return result;
 }
 
-// Computes team/isSolo for a POOL of players (not necessarily the whole table).
-// Used both for the standard full-table path and for whoever's left unassigned
-// after a Major-driven Team Selection phase. Returns groups (arrays of players
-// sharing one team) for seating/interleave purposes.
-function computeTeamsForPool(pool) {
-  if(pool.length === 0) return [];
-  if(pool.length === 1) {
-    pool[0].team = 1; pool[0].isSolo = true;
-    return [[pool[0]]];
-  }
-  if(pool.length === 2) {
-    const sorted = [...pool].sort((a,b) => a.totalVP - b.totalVP);
-    sorted.forEach((p,i) => { p.team = i===0 ? 1 : 2; p.isSolo = false; });
-    return [[sorted[0]],[sorted[1]]];
-  }
-  const n = pool.length;
-  const soloCount = getSoloCount(n);
-  const sorted = shuffleArray(pool).sort((a,b) => b.totalVP - a.totalVP);
-  let nextSoloTeam = 2;
-  const soloPlayers = [];
-  const sharedPlayers = [];
-  sorted.forEach((p,i) => {
-    if(i < soloCount) {
-      p.team = nextSoloTeam++;
-      p.isSolo = true;
-      soloPlayers.push(p);
-    } else {
-      p.team = 1;
-      p.isSolo = false;
-      sharedPlayers.push(p);
+// Assigns SOLO status first, fixed count from the table, locked in and
+// unescapable by any Major. Colored-team assignment (Blue/Red/Green) for
+// whoever's left happens afterward, once the Team Selection Phase completes.
+// 2P (and trivial 1P) is untouched — fixed Team 1/Team 2 split, no solo concept.
+function doSoloAssignment(firstHand) {
+  const n = G.nPlayers;
+  if(n <= 2) {
+    if(firstHand) {
+      G.players.forEach((p,i) => { p.team = i%2===0 ? 1 : 2; p.isSolo = false; });
+    } else if(!G.freezeTeams) {
+      const sorted = [...G.players].sort((a,b)=>a.totalVP-b.totalVP);
+      sorted.forEach((p,i) => { p.team = i===0 ? 1 : 2; p.isSolo = false; });
     }
+    return;
+  }
+  if(G.freezeTeams) return; // frozen: leave whatever Hand 1 set alone
+  if(firstHand) {
+    // No VP history yet: no solos, split evenly among the normal color-team count
+    const teamCount = getColorTeamCount(n);
+    const seq = TEAM_COLOR_SEQUENCE.slice(0, teamCount);
+    G.players.forEach((p,i) => { p.team = teamCount===1 ? TEAM_BLUE : seq[i % teamCount]; p.isSolo = false; });
+    return;
+  }
+  // Hand 2+: fixed solo count, locked in immediately, unescapable by any Major
+  const soloCount = getSoloCount(n);
+  const sorted = shuffleArray(G.players).sort((a,b) => b.totalVP - a.totalVP);
+  G.nextSoloTeamId = 500;
+  sorted.forEach((p,i) => {
+    if(i < soloCount) { p.team = G.nextSoloTeamId++; p.isSolo = true; }
+    else { p.isSolo = false; p.team = null; } // colored in later once Team Selection completes
   });
-  const groups = soloPlayers.map(p => [p]);
-  if(sharedPlayers.length) groups.push(sharedPlayers);
-  return groups;
 }
 
-function assignTeams(players) {
-  const groups = computeTeamsForPool(players);
-  const ordered = interleaveGroups(groups);
-  ordered.forEach((p,i) => { p.seat = i; });
-  return ordered;
+// After the Team Selection Phase, colors whoever's non-solo and still
+// unclaimed, filling in whichever colors weren't already taken by Lovers/Pan
+// this hand, alternating in ascending-VP order. At 3-4P there's only Blue.
+function finishNonSoloTeamAssignment(claimedColors) {
+  const n = G.nPlayers;
+  if(n <= 2) return; // 2P already fully assigned by doSoloAssignment
+  const teamCount = getColorTeamCount(n);
+  const unclaimed = G.players.filter(p => !p.isSolo && p.team === null);
+  if(unclaimed.length === 0) return;
+  if(teamCount === 1) {
+    unclaimed.forEach(p => { p.team = TEAM_BLUE; });
+    return;
+  }
+  const availableColors = TEAM_COLOR_SEQUENCE.slice(0, teamCount).filter(c => !claimedColors.includes(c));
+  const pool = availableColors.length ? availableColors : TEAM_COLOR_SEQUENCE.slice(0, teamCount);
+  const sorted = [...unclaimed].sort((a,b) => a.totalVP - b.totalVP); // ascending, alternating
+  sorted.forEach((p,i) => { p.team = pool[i % pool.length]; });
 }
 
-// Major-Arcana-aware version: majorGroups are teams already formed by Lovers/Pan
-// this hand (each player already has .team/.isSolo set). Standard team logic
-// only runs on whoever's left over, then everyone is seated together.
-function assignTeamsWithMajors(allPlayers, majorGroups) {
-  const assignedIds = new Set();
-  majorGroups.forEach(g => g.forEach(p => assignedIds.add(p.playerId)));
-  const remainder = allPlayers.filter(p => !assignedIds.has(p.playerId));
-  const remainderGroups = computeTeamsForPool(remainder);
-  const allGroups = [...majorGroups, ...remainderGroups];
-  const ordered = interleaveGroups(allGroups);
+// Seats everyone by grouping on final team/solo status (solo players are
+// always their own group of 1, since their team ids are unique) and
+// interleaving so teammates aren't seated consecutively.
+function seatAllPlayers() {
+  const groups = {};
+  G.players.forEach(p => {
+    const key = p.isSolo ? ('solo'+p.playerId) : ('team'+p.team);
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  });
+  const ordered = interleaveGroups(Object.values(groups));
   ordered.forEach((p,i) => { p.seat = i; });
   return ordered;
 }
@@ -2112,20 +2515,27 @@ function assignTeamsWithMajors(allPlayers, majorGroups) {
 // Text color for a player's name/UI elements based on solo/team status.
 function teamColor(p) {
   if(p.isSolo) return '#a8820a';
-  return p.team===1 ? '#1a5aaa' : '#aa2018';
+  if(p.team===1) return '#1a5aaa'; // Blue
+  if(p.team===2) return '#aa2018'; // Red
+  if(p.team===3) return '#1a7838'; // Green
+  return '#1a5aaa';
 }
 // Lighter variant for dark-background contexts (e.g. score table rows).
 function teamColorLight(p) {
   if(p.isSolo) return '#f0c419';
-  return p.team===1 ? '#6ab4ff' : '#ff8a7a';
+  if(p.team===1) return '#6ab4ff'; // Blue
+  if(p.team===2) return '#ff8a7a'; // Red
+  if(p.team===3) return '#5ad48a'; // Green
+  return '#6ab4ff';
 }
 // CSS class suffix for team badges/chips.
 function teamBadgeClass(p) {
   return p.isSolo ? 'solo' : ('t'+p.team);
 }
 // Display label for team badges/chips.
+const TEAM_COLOR_NAMES = {1:'BLUE',2:'RED',3:'GREEN'};
 function teamBadgeLabel(p) {
-  return p.isSolo ? 'SOLO' : ('T'+p.team);
+  return p.isSolo ? 'SOLO' : (TEAM_COLOR_NAMES[p.team] || ('T'+p.team));
 }
 
 // ══════════════════════════════════════════════
@@ -2699,7 +3109,7 @@ function startGame() {
         seat: i,
         name,
         isHuman,
-        hand:[], tableau:[], totalVP:0, team:1, isSolo:false, arcana:[]
+        hand:[], tableau:[], totalVP:0, team:1, isSolo:false, arcana:[], arrowVPMultiplier:1
       });
     }
     NET.started = true;
@@ -2722,7 +3132,7 @@ function startGame() {
         seat: i,
         name,
         isHuman,
-        hand:[], tableau:[], totalVP:0, team:1, isSolo:false, arcana:[]
+        hand:[], tableau:[], totalVP:0, team:1, isSolo:false, arcana:[], arrowVPMultiplier:1
       });
     }
   }
@@ -2732,32 +3142,24 @@ function startGame() {
 }
 
 function dealNewHand(firstHand) {
-  resolveTeamSelectionMajors(G.players, (majorGroups) => {
-    doTeamAssignment(firstHand, majorGroups);
+  // Bid and Arrow-VP-multiplier fields must reset BEFORE the Team Selection
+  // Phase, since Pan/Lovers can set them during that phase — resetting
+  // afterward (as an earlier version mistakenly did) would wipe them out.
+  G.players.forEach(p => { p.bid = null; p.hasBid = false; p.bidDoubled = false; p.arrowVPMultiplier = 1; });
+  doSoloAssignment(firstHand);
+  resolveTeamSelectionMajors(G.players, (claimedColors) => {
+    if(G.nPlayers >= 3) finishNonSoloTeamAssignment(claimedColors);
+    seatAllPlayers();
+    // Apply 3-4P's Lovers/Pan double-Arrow-VP flag to the now-finalized Blue Team
+    if(G.threeFourPBlueDoubled) {
+      G.players.filter(p => !p.isSolo && p.team === TEAM_BLUE).forEach(p => { p.arrowVPMultiplier = 2; });
+    }
     if(G.majorArcana) {
       runMAAuction(() => dealNewHandContinue(firstHand));
     } else {
       dealNewHandContinue(firstHand);
     }
   });
-}
-
-function doTeamAssignment(firstHand, majorGroups) {
-  if(firstHand) {
-    if(majorGroups.length > 0) {
-      assignTeamsWithMajors(G.players, majorGroups);
-    } else {
-      // Assign initial teams evenly (no solos until VP history exists, hand 2+)
-      G.players.forEach((p,i) => { p.team = i % 2 === 0 ? 1 : 2; p.isSolo = false; });
-    }
-    return;
-  }
-  if(G.freezeTeams) return; // teams stay exactly as they were; majorGroups is always empty here
-  if(majorGroups.length > 0) {
-    assignTeamsWithMajors(G.players, majorGroups);
-  } else {
-    assignTeams(G.players);
-  }
 }
 
 // ══════════════════════════════════════════════
@@ -2895,29 +3297,29 @@ function activateDuringTurnMajor(player, card) {
 
 function resolveTeamSelectionMajors(allPlayers, callback) {
   if(!G.majorArcana || G.freezeTeams) { callback([]); return; }
-  G.teamMajorGroups = []; // array of {team, members:[]}
-  G.teamMajorAssignedIds = new Set();
+  G.teamMajorClaimedColors = []; // colors (TEAM_RED/BLUE/GREEN) claimed via Lovers/Pan this hand, 5P+ only
   G.teamMajorHermitFired = false;
-  G.teamMajorNextTeamId = 1000;
-  G.teamMajorQueue = [...allPlayers].sort((a,b)=> (a.totalVP-b.totalVP) || (a.seat-b.seat));
+  G.teamMajor2PDone = false; // 2P games: only 1 of Lovers/Pan/Hermit total per hand
+  G.threeFourPBlueDoubled = false; // 3-4P: Lovers/Pan double Blue Team's Arrow VP (flat, no stacking)
+  // Queue: 2P uses everyone (its own dedicated branch below handles it regardless
+  // of solo, which doesn't exist at 2P). 3+P: only non-solo players are eligible —
+  // solo status is already fixed and locked before this phase ever runs.
+  const pool = G.nPlayers <= 2 ? allPlayers : allPlayers.filter(p => !p.isSolo);
+  G.teamMajorQueue = [...pool].sort((a,b)=> (a.totalVP-b.totalVP) || (a.seat-b.seat));
   G.teamMajorCallback = callback;
   teamMajorNext();
 }
 
-function teamMajorGroupFor(playerId) {
-  return G.teamMajorGroups.find(g => g.members.some(p=>p.playerId===playerId));
-}
-
 function teamMajorNext() {
-  if(G.teamMajorHermitFired || G.teamMajorQueue.length===0) {
-    const groups = G.teamMajorGroups.map(g=>g.members);
+  if(G.teamMajorHermitFired || G.teamMajor2PDone || G.teamMajorQueue.length===0) {
     const cb = G.teamMajorCallback;
     G.teamMajorCallback = null;
-    if(cb) cb(groups);
+    if(cb) cb(G.teamMajorClaimedColors);
     return;
   }
   const player = G.teamMajorQueue.shift();
-  if(G.teamMajorAssignedIds.has(player.playerId)) { teamMajorNext(); return; }
+  // Already claimed a color by an earlier Lovers/Pan this phase (3+P only) — skip their turn
+  if(G.nPlayers >= 3 && !player.isSolo && player.team !== null) { teamMajorNext(); return; }
   const held = player.arcana.filter(c=>c.timing==='predeal');
   if(held.length===0) { teamMajorNext(); return; }
 
@@ -2957,74 +3359,116 @@ function renderTeamMajorPrompt(player, held) {
 function teamMajorChooseCard(player, card) {
   if(card.typeId === 'hermit') {
     G.teamMajorHermitFired = true;
+    G.teamMajor2PDone = true;
     consumeTeamMajor(player, card);
+    if(G.nPlayers <= 2) {
+      // 2P: everyone (there's no pre-existing solo concept here) goes solo
+      G.players.forEach(p => { const id=(G.nextSoloTeamId=(G.nextSoloTeamId||500)); G.nextSoloTeamId++; p.team=id; p.isSolo=true; });
+    } else {
+      // 3+P: every non-solo player who hasn't yet claimed a color this phase
+      // goes solo too — on top of the fixed solo count, unescapable.
+      const unclaimed = G.players.filter(p => !p.isSolo && p.team === null);
+      unclaimed.forEach(p => { p.team = G.nextSoloTeamId++; p.isSolo = true; });
+    }
     glog(player.name+' activates Hermit — all remaining unassigned players go solo!','imp');
     teamMajorNext();
     return;
   }
-  if(card.typeId === 'lovers') {
-    const alreadyAssigned = G.teamMajorAssignedIds.has(player.playerId);
-    const candidates = G.players.filter(p=>p.playerId!==player.playerId && !G.teamMajorAssignedIds.has(p.playerId));
-    if(alreadyAssigned || candidates.length===0) {
-      glog(player.name+"'s Lovers has no valid target — skipped.",'info');
+
+  // 2P-specific: Lovers and Pan don't form/join teams here (2P already has a
+  // fixed team assignment) — instead they grant a double Arrow VP effect.
+  // Only 1 of Lovers/Pan/Hermit total may activate per hand in a 2P game.
+  if(G.nPlayers === 2) {
+    if(card.typeId === 'lovers') {
+      G.players.forEach(p => { p.arrowVPMultiplier = 2; });
+      G.teamMajor2PDone = true;
+      consumeTeamMajor(player, card);
+      glog(player.name+' activates Lovers — both players earn double Arrow VP this hand!','imp');
       teamMajorNext();
       return;
     }
-    showModal(player.name+' — Choose a Lovers partner', 'Pick an unassigned player to form a new team with:',
-      candidates.map(p=>({ label:p.name, fn: ()=>teamMajorDoLovers(player, p, card) })).concat([{label:'Cancel', fn:()=>renderTeamMajorPrompt(player, player.arcana.filter(c=>c.timing==='predeal'))}])
-    );
-    return;
-  }
-  if(card.typeId === 'pan') {
-    const activatorAssigned = G.teamMajorAssignedIds.has(player.playerId);
-    let candidates;
-    if(activatorAssigned) {
-      candidates = G.players.filter(p=>p.playerId!==player.playerId && !G.teamMajorAssignedIds.has(p.playerId));
-    } else {
-      candidates = G.players.filter(p=>p.playerId!==player.playerId && G.teamMajorAssignedIds.has(p.playerId));
+    if(card.typeId === 'pan') {
+      const other = G.players.find(p=>p.playerId!==player.playerId);
+      player.arrowVPMultiplier = 2;
+      if(other) { other.team = (G.nextSoloTeamId=(G.nextSoloTeamId||500)); G.nextSoloTeamId++; other.isSolo = true; }
+      G.teamMajor2PDone = true;
+      consumeTeamMajor(player, card);
+      glog(player.name+' activates Pan — doubles their own Arrow VP and makes '+(other?other.name:'the other player')+' solo this hand!','imp');
+      teamMajorNext();
+      return;
     }
+  }
+
+  // 3-4P: Lovers/Pan don't form a new team (there's only ever Blue) — they
+  // just double the eventual Blue Team's Arrow VP for the hand.
+  if(getColorTeamCount(G.nPlayers) === 1) {
+    if(card.typeId === 'lovers') {
+      G.threeFourPBlueDoubled = true;
+      consumeTeamMajor(player, card);
+      glog(player.name+' activates Lovers — Blue Team earns double Arrow VP this hand!','imp');
+      teamMajorNext();
+      return;
+    }
+    if(card.typeId === 'pan') {
+      G.threeFourPBlueDoubled = true;
+      consumeTeamMajor(player, card);
+      glog(player.name+' activates Pan — Blue Team earns double Arrow VP this hand!','imp');
+      promptDoubledBid(player, TEAM_BLUE);
+      return;
+    }
+  }
+
+  // 5-10P: Lovers/Pan pick an unassigned partner and form a brand-new colored
+  // team, claiming the next unclaimed color in Red -> Blue -> Green order.
+  if(card.typeId === 'lovers' || card.typeId === 'pan') {
+    const candidates = G.players.filter(p => p.playerId!==player.playerId && !p.isSolo && p.team===null);
     if(candidates.length===0) {
-      glog(player.name+"'s Pan has no valid target — skipped.",'info');
+      glog(player.name+"'s "+card.name+" has no valid target — skipped.",'info');
       teamMajorNext();
       return;
     }
-    showModal(player.name+' — Choose a Pan target', 'Pick a player:',
-      candidates.map(p=>({ label:p.name, fn: ()=>teamMajorDoPan(player, p, card) })).concat([{label:'Cancel', fn:()=>renderTeamMajorPrompt(player, player.arcana.filter(c=>c.timing==='predeal'))}])
+    const label = card.typeId==='lovers' ? 'Choose a Lovers partner' : 'Choose a Pan partner';
+    showModal(player.name+' — '+label, 'Pick an unassigned player to form a new team with:',
+      candidates.map(p=>({ label:p.name, fn: ()=>teamMajorFormTeam(player, p, card) }))
+        .concat([{label:'Cancel', fn:()=>renderTeamMajorPrompt(player, player.arcana.filter(c=>c.timing==='predeal'))}])
     );
     return;
   }
 }
 
-function teamMajorDoLovers(player, target, card) {
-  const teamId = G.teamMajorNextTeamId++;
-  player.team = teamId; player.isSolo = false;
-  target.team = teamId; target.isSolo = false;
-  G.teamMajorGroups.push({ team:teamId, members:[player,target] });
-  G.teamMajorAssignedIds.add(player.playerId);
-  G.teamMajorAssignedIds.add(target.playerId);
+function teamMajorFormTeam(player, target, card) {
+  const color = TEAM_COLOR_SEQUENCE.find(c => !G.teamMajorClaimedColors.includes(c));
+  G.teamMajorClaimedColors.push(color);
+  player.team = color; player.isSolo = false; player.arrowVPMultiplier = 2;
+  target.team = color; target.isSolo = false; target.arrowVPMultiplier = 2;
   consumeTeamMajor(player, card);
-  glog(player.name+' activates Lovers — forms a team with '+target.name+'!','imp');
-  teamMajorNext();
+  glog(player.name+' activates '+card.name+' — forms '+TEAM_COLOR_NAMES[color]+' Team with '+target.name+'!','imp');
+  if(card.typeId === 'pan') {
+    promptDoubledBid(player, color);
+  } else {
+    teamMajorNext();
+  }
 }
 
-function teamMajorDoPan(player, target, card) {
-  let group;
-  if(G.teamMajorAssignedIds.has(player.playerId)) {
-    // Activator already on a major-formed team; target (unassigned) joins it
-    group = teamMajorGroupFor(player.playerId);
-    target.team = group.team; target.isSolo = false;
-    group.members.push(target);
-    G.teamMajorAssignedIds.add(target.playerId);
-  } else {
-    // Activator unassigned; joins target's existing major-formed team
-    group = teamMajorGroupFor(target.playerId);
-    player.team = group.team; player.isSolo = false;
-    group.members.push(player);
-    G.teamMajorAssignedIds.add(player.playerId);
+// Pan's activator personally declares Laoda or Pinyin for their team at
+// double the normal stakes (Laoda +/-100, Pinyin +/-50). This is solely the
+// activating player's call, and counts as that team's one bid for the hand.
+function promptDoubledBid(player, colorOrBlue) {
+  if(!player.isHuman || netIsRemoteControlled(player.seat)) {
+    // AI: simple default for now — declare Pinyin (the safer doubled bid)
+    player.bid = 'pinyin'; player.hasBid = true; player.bidDoubled = true;
+    glog(player.name+' declares a doubled PINYIN via Pan!','imp');
+    teamMajorNext();
+    return;
   }
-  consumeTeamMajor(player, card);
-  glog(player.name+' activates Pan — joins forces with '+target.name+"'s team!",'imp');
-  teamMajorNext();
+  showModal(
+    player.name+' — Pan Declaration',
+    'Declare Laoda or Pinyin for your team, at double the normal stakes.',
+    [
+      { label:'LAODA (+/-100)', fn: ()=>{ player.bid='laoda'; player.hasBid=true; player.bidDoubled=true; glog(player.name+' declares a doubled LAODA via Pan!','imp'); teamMajorNext(); } },
+      { label:'PINYIN (+/-50)', fn: ()=>{ player.bid='pinyin'; player.hasBid=true; player.bidDoubled=true; glog(player.name+' declares a doubled PINYIN via Pan!','imp'); teamMajorNext(); } }
+    ]
+  );
 }
 
 
@@ -3104,7 +3548,7 @@ function dealNewHandContinue(firstHand) {
   G.layoffTargets = [];
   
   // Clear hands, tableaux, and per-hand flags
-  G.players.forEach(p => { p.hand=[]; p.tableau=[]; p.hadTurnThisHand=false; p.hadMoreThanOneTurn=false; p.ginEligible=false; p.goOutPosition=null; p.goOutIsGin=false; p.bid=null; p.hasBid=false; p.handStarVP=0; });
+  G.players.forEach(p => { p.hand=[]; p.tableau=[]; p.hadTurnThisHand=false; p.hadMoreThanOneTurn=false; p.ginEligible=false; p.goOutPosition=null; p.goOutIsGin=false; p.handStarVP=0; });
   
   // Deal 13 cards each
   for(let i=0;i<13;i++) {
@@ -3130,6 +3574,14 @@ function dealNewHandContinue(firstHand) {
   G.mustUseCardId = null;
   G.discardPickSnapshot = null;
   currentPlayer().ginEligible = true;
+
+  // Snapshot the complete game state right as this hand begins, so the Menu's
+  // "Restart Hand" option can fully roll back any VP already earned this hand
+  // (Star VP, Major Arcana Arrow VP, etc.), not just redeal fresh cards.
+  // Clear any prior snapshot first so this one doesn't nest inside itself.
+  delete G.handStartSnapshot;
+  G.handStartSnapshot = JSON.parse(JSON.stringify(G));
+
   glog('--- Hand '+G.handNum+' begins ---','imp');
   renderAll();
 
@@ -3266,6 +3718,7 @@ function triggerGoOut(outPlayerSeat, isGin) {
 
   const posNames = {1:'Laoda (1st)', 2:'Pinyin (2nd)', 3:'3rd'};
   glog(outPlayer.name+' goes out'+(isGin?' (GIN!)':'!')+' — '+posNames[position], 'imp');
+  playGoOutSound();
 
   G.outSeat = outPlayerSeat;
   G.outIsGin = isGin;
@@ -3322,7 +3775,7 @@ function showBidPrompt(player) {
 
   // Update hint text
   const laodaBtn = bar.querySelector('.bid-btn.laoda');
-  if(laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 team fail</span>';
+  if(laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st / −50 team fail</span>';
   if(pinyinBtn) pinyinBtn.innerHTML = 'PINYIN<span class="bid-hint">+25 team if any out / −25 team fail</span>';
 
   // Find teammates who have already bid
@@ -3340,7 +3793,7 @@ function showBidPrompt(player) {
     // Check if any teammate has declared Laoda or Pinyin — add subsequent declarer note
     const laodaFirst = teammates.some(t=>t.bid==='laoda');
     const pinyinFirst = teammates.some(t=>t.bid==='pinyin');
-    if(laodaFirst && laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st/2nd / −50 YOU ONLY fail</span>';
+    if(laodaFirst && laodaBtn) laodaBtn.innerHTML = 'LAODA<span class="bid-hint">+50 team if 1st / −50 YOU ONLY fail</span>';
     if(pinyinFirst && pinyinBtn) pinyinBtn.innerHTML = 'PINYIN<span class="bid-hint">+25 team if any out / −25 YOU ONLY fail</span>';
   }
 
@@ -3559,6 +4012,9 @@ function humanMeld() {
   if(hasTD) transferMeldOwnership(meld);
   sortSFMeld(meld);
   G.players.find(p=>p.seat===meld.ownerIdx).tableau.push(meld);
+  playCardSound();
+  if(isMeldLocked(meld)) playLockSound();
+  if(sel.some(c=>c.isTopCat)) playMeowSound();
   awardStarVP(sel, player);
   awardCompletionBonus(meld, false);
 
@@ -3689,6 +4145,9 @@ function doLayoff(seat, mi) {
   const result = validateMeld(meld.cards);
   meld.isComplete = result.isComplete || false;
   sortSFMeld(meld);
+  playCardSound();
+  if(isMeldLocked(meld)) playLockSound();
+  if(sel.some(c=>c.isTopCat)) playMeowSound();
   awardStarVP(sel, player);
   awardCompletionBonus(meld, wasComplete);
 
@@ -3939,7 +4398,9 @@ function aiDraw(player) {
   if(G.discardPile.length > 0) {
     const top = G.discardPile[G.discardPile.length-1];
     if(aiWantsDiscard(player, top)) {
-      player.hand.push(G.discardPile.pop());
+      const picked = G.discardPile.pop();
+      player.hand.push(picked);
+      G.mustUseCardId = picked.id; // excludes this exact card from Star VP if melded this turn
       glog(player.name+' draws from discard.','info');
       checkAndShowBid();
       return;
@@ -4089,6 +4550,9 @@ function aiAct(player) {
       if(meld.some(c=>c.isTopDog)) transferMeldOwnership(meldObj);
       sortSFMeld(meldObj);
       G.players.find(p=>p.seat===meldObj.ownerIdx).tableau.push(meldObj);
+      playCardSound();
+      if(isMeldLocked(meldObj)) playLockSound();
+      if(meld.some(c=>c.isTopCat)) playMeowSound();
       awardStarVP(meld, player);
       awardCompletionBonus(meldObj, false);
       glog(player.name+' melds '+meld.map(c=>c.displayRank).join(','),'info');
@@ -4142,6 +4606,9 @@ function aiAct(player) {
               const res = validateMeld(meld.cards);
               meld.isComplete = res.isComplete||false;
               sortSFMeld(meld);
+              playCardSound();
+              if(isMeldLocked(meld)) playLockSound();
+              if(card.isTopCat) playMeowSound();
               awardStarVP([card], player);
               awardCompletionBonus(meld, wasComp);
               if(card.isTopDog) {
@@ -4262,8 +4729,8 @@ function aiPickDiscard(player) {
     const tc = hand.filter(c=>c.isTopCat);
     if(tc.length) return tc[0];
     const sorted = [...hand].sort((a,b)=>{
-      const aScore = a.isStar?-10:a.isArrow?(a.rank===5?-8:-5):a.rank;
-      const bScore = b.isStar?-10:b.isArrow?(b.rank===5?-8:-5):b.rank;
+      const aScore = a.isStar?-10:a.isArrow?-5:a.rank;
+      const bScore = b.isStar?-10:b.isArrow?-5:b.rank;
       return bScore-aScore;
     });
     const safe = sorted.filter(c=>!wouldHelpAnOpponent(c, player));
@@ -4276,8 +4743,8 @@ function aiPickDiscard(player) {
   const tc = hand.filter(c=>c.isTopCat);
   if(tc.length) return tc[0];
   const sorted = [...hand].sort((a,b)=>{
-    const aScore = a.isStar?-10:a.isArrow?(a.rank===5?-8:-5):a.rank;
-    const bScore = b.isStar?-10:b.isArrow?(b.rank===5?-8:-5):b.rank;
+    const aScore = a.isStar?-10:a.isArrow?-5:a.rank;
+    const bScore = b.isStar?-10:b.isArrow?-5:b.rank;
     return bScore-aScore;
   });
   return sorted[0];
@@ -4656,7 +5123,6 @@ function makeHandCard(card) {
   if(card.isTopDog) tipLines.push('Top Dog — Arrow ▲+5\nMeld ownership → lowest VP player');
   else if(card.isTopCat) tipLines.push('Top Cat — Star ★+5 (immediate), Radioactive ☢-5\nDoes not trigger meld ownership transfer');
   else if(card.isStar) tipLines.push('Star ★ — scores 5 VP in Tableau');
-  else if(card.rank===5) tipLines.push('Arrow ▲▲ — team scores 10 VP (double)');
   else if(card.rank===14) tipLines.push('Arrow ▼▼ — team loses 10 VP (double negative); exempt if part of a locked King Sextet');
   else if(card.isArrow) tipLines.push('Arrow ▲ — team scores 5 VP each');
   else if(card.rank===12) tipLines.push('Radioactive ☢☢ — excess Radioactive penalty −10 VP (double)\nPenalty if held in hand: −10 VP\nExempt if part of a locked Radioactive Sextet');
@@ -4682,22 +5148,31 @@ function renderMyMajors() {
   const area = document.getElementById('my-majors-area');
   if(!area) return;
   if(!G.majorArcana) { area.style.display='none'; return; }
-  const player = getMyPlayerForUI();
   area.style.display = 'block';
   const strip = document.getElementById('my-majors-strip');
-  if(!player || !player.arcana || player.arcana.length===0) {
-    strip.innerHTML = '<div class="ma-mini-empty">No Major Arcana cards drafted yet</div>';
-    return;
-  }
-  const canAct = canActivateMajors(player);
-  strip.innerHTML = player.arcana.map(card => {
-    const activatable = canAct && card.timing==='duringturn';
-    const cls = 'ma-mini-card' + (activatable ? ' ma-mini-activatable' : (card.timing==='duringturn' ? ' ma-mini-inactive' : ''));
-    const click = activatable ? `onclick="onMajorCardClick('${card.maId}')"` : '';
-    const hint = card.timing==='predeal' ? ' (Pre-Deal — activates at hand start, not now)' : '';
-    return `<div class="${cls}" ${click} title="${card.name}: ${card.desc.replace(/"/g,'&quot;')}${hint}">
-      <div class="ma-mini-numeral">${card.numeral}</div>
-      <div class="ma-mini-name">${card.name}</div>
+  const myPlayer = getMyPlayerForUI();
+
+  strip.innerHTML = G.players.map(p => {
+    const isMe = myPlayer && p.seat === myPlayer.seat;
+    const canAct = isMe && canActivateMajors(p);
+    let cardsHtml;
+    if(!p.arcana || p.arcana.length===0) {
+      cardsHtml = '<div class="ma-mini-empty">None</div>';
+    } else {
+      cardsHtml = p.arcana.map(card => {
+        const activatable = canAct && card.timing==='duringturn';
+        const cls = 'ma-mini-card' + (activatable ? ' ma-mini-activatable' : (card.timing==='duringturn' ? ' ma-mini-inactive' : ''));
+        const click = activatable ? `onclick="onMajorCardClick('${card.maId}')"` : '';
+        const hint = card.timing==='predeal' ? ' (Pre-Deal — activates at hand start, not now)' : '';
+        return `<div class="${cls}" ${click} title="${card.name}: ${card.desc.replace(/"/g,'&quot;')}${hint}">
+          <div class="ma-mini-numeral">${card.numeral}</div>
+          <div class="ma-mini-name">${card.name}</div>
+        </div>`;
+      }).join('');
+    }
+    return `<div class="ma-player-row">
+      <div class="ma-player-row-name">${p.name}${isMe?' (You)':''}</div>
+      <div class="ma-player-row-cards">${cardsHtml}</div>
     </div>`;
   }).join('');
 }
