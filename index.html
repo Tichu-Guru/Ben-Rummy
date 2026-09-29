@@ -288,6 +288,9 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
 }
 .player-tableau.active-tableau{
   border-color:var(--gold2);
+  border-width:2.5px;
+  box-shadow:0 0 0 3px rgba(201,168,76,0.35), 0 0 16px rgba(201,168,76,0.4);
+  background:rgba(201,168,76,0.06);
 }
 .tab-header{
   display:flex;align-items:center;gap:8px;
@@ -298,6 +301,16 @@ body{background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;min-
   color:var(--text);letter-spacing:1px;
 }
 .tab-name.human{color:var(--gold);}
+.turn-indicator{
+  display:inline-block;background:var(--gold2);color:#1a1430;
+  font-size:0.62rem;font-weight:900;letter-spacing:1px;
+  padding:1px 6px;border-radius:6px;margin-left:2px;
+  animation:turn-pulse 1.4s ease-in-out infinite;
+}
+@keyframes turn-pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.55;}
+}
 .tab-team-badge{
   font-size:0.55rem;padding:2px 6px;border-radius:8px;
   font-family:'Cinzel',serif;letter-spacing:1px;font-weight:700;
@@ -1414,6 +1427,18 @@ let tableauZoomBase = null; // captured once, lazily, from whatever the current 
 // sound whenever a card is played into a meld or laid off.
 // ══════════════════════════════════════════════
 let soundEnabled = true;
+// ══════════════════════════════════════════════
+// SOUND EVENT RELAY (online multiplayer) — only the host's browser actually
+// runs game logic, so only the host would ever hear these sounds locally.
+// Every sound-triggering function queues a lightweight tag here; the host's
+// next state broadcast includes the queue, and remote clients replay it on
+// their own end after applying the synced state. No-op entirely offline.
+// ══════════════════════════════════════════════
+let pendingSfxEvents = [];
+function queueSfxEvent(type) {
+  if (NET.mode === 'host' && NET.started) pendingSfxEvents.push(type);
+}
+
 let audioCtx = null;
 function getAudioCtx() {
   if (audioCtx) return audioCtx;
@@ -1436,6 +1461,7 @@ function withAudioCtx(fn) {
 }
 function playCardSound() {
   if (!soundEnabled) return;
+  queueSfxEvent('card');
   withAudioCtx((ctx) => {
   const now = ctx.currentTime;
 
@@ -1479,6 +1505,7 @@ function playCardSound() {
 
 function playLockSound() {
   if (!soundEnabled) return;
+  queueSfxEvent('lock');
   withAudioCtx((ctx) => {
   const now = ctx.currentTime;
 
@@ -1533,11 +1560,11 @@ function playEmbeddedSfx(base64) {
   } catch(e) {}
 }
 // Plays when a TD (Top Dog) is played into a meld or laid off.
-function playDogSound() { playEmbeddedSfx(SFX_DOG_B64); }
+function playDogSound() { queueSfxEvent('dog'); playEmbeddedSfx(SFX_DOG_B64); }
 // Plays when a TC (Top Cat) is played into a meld or laid off.
-function playMeowSound() { playEmbeddedSfx(SFX_MEOW_B64); }
+function playMeowSound() { queueSfxEvent('meow'); playEmbeddedSfx(SFX_MEOW_B64); }
 // Plays whenever any player goes out.
-function playGoOutSound() { playEmbeddedSfx(SFX_BELL_B64); }
+function playGoOutSound() { queueSfxEvent('bell'); playEmbeddedSfx(SFX_BELL_B64); }
 
 function toggleSound() {
   soundEnabled = !soundEnabled;
@@ -1696,7 +1723,7 @@ let G = {};
 
 // Setup selections
 // Bump this on every saved version so the on-screen tag always matches the filename.
-const GAME_VERSION = 'v90';
+const GAME_VERSION = 'v93';
 document.getElementById('version-tag-setup').textContent = GAME_VERSION;
 document.getElementById('version-tag-game').textContent = GAME_VERSION;
 
@@ -2470,14 +2497,16 @@ function doSoloAssignment(firstHand) {
     }
     return;
   }
-  if(G.freezeTeams) return; // frozen: leave whatever Hand 1 set alone
   if(firstHand) {
-    // No VP history yet: no solos, split evenly among the normal color-team count
+    // No VP history yet: no solos, split evenly among the normal color-team count.
+    // Runs regardless of freezeTeams — freezing means "don't re-shuffle after
+    // Hand 1", not "never assign anyone a team at all".
     const teamCount = getColorTeamCount(n);
     const seq = TEAM_COLOR_SEQUENCE.slice(0, teamCount);
     G.players.forEach((p,i) => { p.team = teamCount===1 ? TEAM_BLUE : seq[i % teamCount]; p.isSolo = false; });
     return;
   }
+  if(G.freezeTeams) return; // frozen: leave whatever Hand 1 set alone
   // Hand 2+: fixed solo count, locked in immediately, unescapable by any Major
   const soloCount = getSoloCount(n);
   const sorted = shuffleArray(G.players).sort((a,b) => b.totalVP - a.totalVP);
@@ -2571,7 +2600,7 @@ function transferMeldOwnership(meld) {
 // GAME INIT
 // ══════════════════════════════════════════════
 // ══ ONLINE MULTIPLAYER (Phase 1) ══
-const NET = { mode:'local', peer:null, roomCode:null, joiners:[], hostConn:null, started:false, myName:'', seatAssign:{}, remoteByPid:{}, mySeat:null, inGame:false, stateInterval:null, lastScreenId:'setup-screen' };
+const NET = { mode:'local', peer:null, roomCode:null, joiners:[], hostConn:null, started:false, myName:'', seatAssign:{}, remoteByPid:{}, lastPongByPid:{}, mySeat:null, inGame:false, stateInterval:null, lastScreenId:'setup-screen' };
 const NET_PREFIX = 'benrummy-';
 const netEsc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function netRoomCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for(let i=0;i<4;i++) c+=A[Math.floor(Math.random()*A.length)]; return c; }
@@ -2671,6 +2700,10 @@ function netHostData(conn, d){
     const seat = netSeatOfConn(conn);
     if (seat===null) return;
     netApplyIntent(seat, d);
+  }
+  else if (d.t==='pong'){
+    const pid = netPidOfConn(conn);
+    if (pid!==null) NET.lastPongByPid[pid] = Date.now();
   }
 }
 function netPidOfConn(conn){
@@ -2837,6 +2870,9 @@ function netClientData(d){
     if (d.started) netStatus('join-status','Game in progress — you\'ll join the next one.','ok');
   }
   else if (d.t==='start'){ document.getElementById('online-wait-screen').classList.add('open'); }
+  else if (d.t==='ping'){
+    try { NET.hostConn.send({t:'pong'}); } catch(e) {}
+  }
   else if (d.t==='state'){
     const prevG = (NET.mode==='join') ? G : null;
     G = netUnpack(d.g);
@@ -2881,6 +2917,15 @@ function netClientData(d){
     const banner = document.getElementById('net-spectate-banner');
     if (banner) banner.textContent = myTurn ? '🎴 YOUR TURN — draw, meld, lay off, displace, or discard' : '👁 Watching live — AI is playing for you';
     try{ renderAll(); }catch(e){ console.error('client render error:', e); }
+    if (d.sfx && d.sfx.length) {
+      d.sfx.forEach(tag => {
+        if (tag==='card') playCardSound();
+        else if (tag==='lock') playLockSound();
+        else if (tag==='meow') playMeowSound();
+        else if (tag==='dog') playDogSound();
+        else if (tag==='bell') playGoOutSound();
+      });
+    }
     if (myTurn) {
       const cp = currentPlayer();
       if (cp.isHuman && !cp.hasBid && G.phase==='act' && cp.tableau.length===0) showBidPrompt(cp);
@@ -2956,16 +3001,51 @@ function netCollectLog(){
 function netCollectUI(){
   return { log: netCollectLog(), screen: NET.lastScreenId };
 }
+// Heartbeat: the browser's own connection close/error events reliably fire
+// for a clean disconnect, but are known to be unreliable — slow or absent —
+// for an abrupt one (app killed, network dropped, phone locked). This proactively
+// pings every remote connection and hands a seat to AI if it's gone quiet for
+// too long, rather than leaving the host waiting indefinitely for input that
+// will never arrive.
+const NET_HEARTBEAT_TIMEOUT_MS = 30000;
+function netHeartbeatTick() {
+  netSendStates();
+  netCheckHeartbeats();
+}
+function netCheckHeartbeats() {
+  if (NET.mode!=='host' || !NET.started) return;
+  const now = Date.now();
+  for (const pidStr of Object.keys(NET.remoteByPid)) {
+    const pid = +pidStr, conn = NET.remoteByPid[pidStr];
+    if (!conn) continue;
+    // A connection that hasn't been pinged yet gets treated as "just seen" so
+    // it isn't flagged stale before the first ping/pong round-trip can happen.
+    const last = NET.lastPongByPid[pid] || now;
+    if (now - last > NET_HEARTBEAT_TIMEOUT_MS) {
+      glog('No response from a remote player in 30s — handing their seat to AI.', 'bad');
+      delete NET.lastPongByPid[pid];
+      // Just close it — the existing conn.on('close', ...) handler already
+      // does the full cleanup (joiners list, lobby, and netHandleDisconnect
+      // itself), so calling netHandleDisconnect directly here too would
+      // double-fire it.
+      try { conn.close(); } catch(e) {}
+      continue;
+    }
+    try { conn.send({t:'ping'}); } catch(e) {}
+  }
+}
 function netSendStates(){
   if (NET.mode!=='host' || !NET.started || !G || !G.nPlayers) return;
   const ui = netCollectUI();
+  const sfx = pendingSfxEvents; // capture once so every recipient gets the same list
+  pendingSfxEvents = [];
   for (const pidStr of Object.keys(NET.remoteByPid)){
     const pid = +pidStr, conn = NET.remoteByPid[pidStr];
     if (!conn || !conn.open) continue;
     const p = G.players.find(pl=>pl.playerId===pid);
     if (!p) continue;
     const seat = p.seat; // re-derived fresh every broadcast — seats reshuffle every hand
-    try{ conn.send({t:'state', seat, g: netSerializeG(seat), ui}); }catch(e){}
+    try{ conn.send({t:'state', seat, g: netSerializeG(seat), ui, sfx}); }catch(e){}
   }
 }
 function netApplyUI(ui){
@@ -3129,10 +3209,11 @@ function startGame() {
     // From here on, always resolve current seat via playerId — assignTeams() reshuffles
     // .seat every hand for the solo/team system, but playerId never changes.
     NET.remoteByPid = {};
+    NET.lastPongByPid = {};
     for (let i=1;i<nPlayers;i++) if (NET.seatAssign[i]) NET.remoteByPid[i] = NET.seatAssign[i].conn;
     netBroadcast({t:'start'});
     if (NET.stateInterval) clearInterval(NET.stateInterval);
-    NET.stateInterval = setInterval(netSendStates, 2000); // safety net for any state change that skips renderAll()
+    NET.stateInterval = setInterval(netHeartbeatTick, 2000); // sends state + heartbeat pings, checks for stale connections
   } else {
     for(let i=0;i<nPlayers;i++) {
       const cfg = setupPlayers[i];
@@ -4928,7 +5009,7 @@ function renderTableaux() {
     const nameEl=document.createElement('span');
     nameEl.className='tab-name'+(isMe?' human':'');
     nameEl.style.color = teamColor(p);
-    nameEl.textContent=p.name+(p.seat===G.currentSeat?' ◄':'')+(isMe?' (You)':'');
+    nameEl.innerHTML = netEsc(p.name) + (isMe?' (You)':'') + (p.seat===G.currentSeat ? ' <span class="turn-indicator">\u25B6 TURN</span>' : '');
     const teamBadge=document.createElement('span');
     teamBadge.className='tab-team-badge '+teamBadgeClass(p);
     teamBadge.textContent=teamBadgeLabel(p);
